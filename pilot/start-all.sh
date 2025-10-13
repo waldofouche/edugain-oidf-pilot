@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 cd caddy && docker compose up -d && cd ..
 cd ta && docker compose up -d && cd ..

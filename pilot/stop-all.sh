@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 cd rp1 && docker compose down && cd ..
 cd ia1 && docker compose down && cd ..
