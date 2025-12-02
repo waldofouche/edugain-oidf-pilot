@@ -1,7 +1,7 @@
 
 # OpenID Federation Test Cases
 
-This document defines test cases for OpenID Federation in eduGAIN. This includes interoprability tests for Trust Anchors, Relying Party's, and OpenID Providers. 
+This document defines test cases for OpenID Federation in eduGAIN. This includes interoprability tests for Trust Anchors, Relying Party's, and OpenID Providers.
 
 ---
 
@@ -18,12 +18,13 @@ This document defines test cases for OpenID Federation in eduGAIN. This includes
 
 ## Test Architectures
 
-| Ref | Type | Topology & Description |
-|------|-----------|-------------------------------|
-| **TA-01** | Basic | A single Trust Anchor managing enrolment and trust for one OP and one RP. |
-| **TA-02** | Hierarchical Single-Root | A root Trust Anchor delegates trust to a single intermediate authority, which manages one OP and one RP. |
-| **TA-03** | Hierarchical Single-Root, Multi-Intermediate | A single Trust Anchor with two intermediate authorities; each intermediate manages its own OP and RP. |
+| Ref | Type | Topology & Description                                                                                                                                                                                                            |
+|------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **TA-01** | Basic | A single Trust Anchor managing enrolment and trust for one OP and one RP.                                                                                                                                                         |
+| **TA-02** | Hierarchical Single-Root | A root Trust Anchor delegates trust to a single intermediate authority, which manages one OP and one RP.                                                                                                                          |
+| **TA-03** | Hierarchical Single-Root, Multi-Intermediate | A single Trust Anchor with two intermediate authorities; each intermediate manages its own OP and RP.                                                                                                                             |
 | **TA-04** | Hierarchical Multi-Intermediate and Multi-Root | Two Trust Anchors: the first has two intermediates with an OP and RP each; the second has an OP and RP, but the OP also connects to one intermediate from the first Trust Anchor, forming a cross administrative federation link. |
+|**RP-01** | Basic | A single RP managing managed by a Trust Anchor                                                                                                                                                                                    |
 
 
 
@@ -77,7 +78,7 @@ This document defines test cases for OpenID Federation in eduGAIN. This includes
  
 ```
 
-### TA-05: Basic Topology with Trust Mark Issuer 
+### TA-05: Basic Topology with Trust Mark Issuer
 
 ```
       [ Trust Anchor (Root) A ] -->[ Trust Mark Issuer A]
@@ -208,5 +209,10 @@ In each test case, the architecture reference (e.g., TA-01) indicates which is t
 
 ---
 
+## Federation Interoperability Test Cases (SAML/OpenID)
 
+
+| Ref       | Arch | Requirement Level | Test Name                                  | Requirement Summary                                                                             | Test Action                                                                    | Expected Outcome                                                           |
+|-----------|------|--------------|--------------------------------------------|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| **FI-01** | RP-01 | MAY              | Relying Party SAML/OpenID Interoperability | A user should be able to login to a service regardless of federation type, and be the same user | Login to RP that is both SAML/OpenID Federated | End-User is the same user to the service, regadless of the authn mechanism |
 
