@@ -7,7 +7,10 @@ idp_container="${IDP_CONTAINER:-op1-shibop1-1}"
 credentials_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/credentials.xml"
 default_rules_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/attributes/default-rules.xml"
 oidc_credentials_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/oidc-credentials.xml"
+oidc_clientinfo_resolvers_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/oidc-clientinfo-resolvers.xml"
 oidc_properties_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/oidc.properties"
+oidc_unregistered_policy_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/oidc-unregistered-client-policy.json"
+oidc_client_metadata_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/metadata/oidc-client.json"
 openid_configuration_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/static/openid-configuration.json"
 relying_party_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/relying-party.xml"
 
@@ -15,28 +18,43 @@ list_installed_modules="false"
 replace_credentials="true"
 replace_default_rules="true"
 replace_oidc_credentials="true"
+replace_oidc_clientinfo_resolvers="true"
 replace_oidc_issuer="true"
+install_basic_rp="true"
 replace_relying_party="true"
 generate_jwks="true"
 did_mutate="false"
 
+basic_rp_client_id="${BASIC_RP_CLIENT_ID:-sp1-oidc-client}"
+basic_rp_redirect_host="${BASIC_RP_REDIRECT_HOST:-sp1.dev.localhost}"
+basic_rp_redirect_uri="${BASIC_RP_REDIRECT_URI:-https://${basic_rp_redirect_host}/oauth2/callback}"
+basic_rp_client_secret="${BASIC_RP_CLIENT_SECRET:-sp1-oidc-secret-change}"
+basic_rp_scope="${BASIC_RP_SCOPE:-openid profile email}"
+
 usage() {
   cat <<'EOF'
 Usage:
-  ./configure-shib-oidfed-snapshots [--list-installed-modules] [--no-replace-credentials] [--no-replace-default-rules] [--no-replace-oidc-credentials] [--no-replace-oidc-issuer] [--no-replace-relying-party] [--no-generate-jwks]
+  ./configure-shib-oidfed-snapshots [--list-installed-modules] [--no-replace-credentials] [--no-replace-default-rules] [--no-replace-oidc-credentials] [--no-replace-oidc-clientinfo-resolvers] [--no-replace-oidc-issuer] [--no-install-basic-rp] [--no-replace-relying-party] [--no-generate-jwks]
 
 Flags:
   --list-installed-modules    List modules from the running IdP container
   --no-replace-credentials    Do not replace credentials.xml
   --no-replace-default-rules  Do not replace default-rules.xml
   --no-replace-oidc-credentials Do not replace oidc-credentials.xml
+  --no-replace-oidc-clientinfo-resolvers Do not replace oidc-clientinfo-resolvers.xml
   --no-replace-oidc-issuer    Do not replace idp.oidc.issuer in oidc.properties
+  --no-install-basic-rp       Do not replace basic RP files (oidc-unregistered-client-policy.json and metadata/oidc-client.json)
   --no-replace-relying-party  Do not replace relying-party.xml
   --no-generate-jwks          Do not generate JWK credential files in /opt/shibboleth-idp/credentials
   --help, -h                  Show this help
 
 Optional env vars:
   IDP_CONTAINER=<container-name>      default: op1-shibop1-1
+  BASIC_RP_CLIENT_ID=<client-id>      default: sp1-oidc-client
+  BASIC_RP_REDIRECT_HOST=<hostname>   default: sp1.dev.localhost
+  BASIC_RP_REDIRECT_URI=<https-uri>   default: https://<BASIC_RP_REDIRECT_HOST>/oauth2/callback
+  BASIC_RP_CLIENT_SECRET=<secret>     default: sp1-oidc-secret-change
+  BASIC_RP_SCOPE=<scope>              default: openid profile email
 EOF
 }
 
@@ -58,8 +76,14 @@ for arg in "$@"; do
     --no-replace-oidc-credentials)
       replace_oidc_credentials="false"
       ;;
+    --no-replace-oidc-clientinfo-resolvers)
+      replace_oidc_clientinfo_resolvers="false"
+      ;;
     --no-replace-oidc-issuer)
       replace_oidc_issuer="false"
+      ;;
+    --no-install-basic-rp)
+      install_basic_rp="false"
       ;;
     --no-replace-relying-party)
       replace_relying_party="false"
@@ -84,6 +108,10 @@ if [[ -z "$(docker ps --filter "name=^${idp_container}$" --format '{{.Names}}')"
   echo "Error: IdP container ${idp_container} is not running" >&2
   exit 1
 fi
+
+## Follows all the instructions from https://shibboleth.atlassian.net/wiki/spaces/IDPPLUGINS/pages/1376878976/OIDC+OP#Initial-Setup to configure the
+## IdP at minimum for OIDC support, with some additional defaults for convenience.
+
 
 if [[ "${replace_credentials}" == "true" ]]; then
   cat > "${credentials_file}" <<'EOF_XML'
@@ -278,6 +306,47 @@ EOF_XML
   did_mutate="true"
 fi
 
+if [[ "${replace_oidc_clientinfo_resolvers}" == "true" ]]; then
+  cat > "${oidc_clientinfo_resolvers_file}" <<'EOF_XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+
+       default-init-method="initialize"
+       default-destroy-method="destroy"
+       default-lazy-init="true">
+
+    <!--
+    The following example contains two OIDC client information resolvers:
+        - first one reading a single client's information from a JSON file
+        - second one fetching client information from a configured StorageService
+    -->
+
+    <util:list id="shibboleth.oidc.ClientInformationResolvers">
+        <ref bean="ExampleFileResolver" />
+        <ref bean="ExampleStorageClientInformationResolver" />
+    </util:list>
+
+
+    <bean id="ExampleFileResolver" parent="shibboleth.oidc.FilesystemClientInformationResolver"
+        c:metadata="%{idp.home}/metadata/oidc-client.json" />
+
+    <bean id="ExampleStorageClientInformationResolver" parent="shibboleth.oidc.StorageClientInformationResolver"
+        p:storageService-ref="#{'%{idp.oidc.dynreg.StorageService:shibboleth.StorageService}'.trim()}" />
+
+</beans>
+EOF_XML
+  echo "Replaced ${oidc_clientinfo_resolvers_file}"
+  did_mutate="true"
+fi
+
 if [[ "${replace_oidc_issuer}" == "true" ]]; then
   if [[ ! -f "${oidc_properties_file}" ]]; then
     echo "Error: file not found: ${oidc_properties_file}" >&2
@@ -319,6 +388,59 @@ PY
     echo "Updated discovery template in ${openid_configuration_file}"
   fi
 
+  did_mutate="true"
+fi
+
+if [[ "${install_basic_rp}" == "true" ]]; then
+  if [[ "${basic_rp_redirect_uri}" != https://* ]]; then
+    echo "Error: BASIC_RP_REDIRECT_URI must start with https://" >&2
+    exit 1
+  fi
+
+  cat > "${oidc_unregistered_policy_file}" <<EOF_JSON
+{
+  "client_id": {
+    "one_of": ["${basic_rp_client_id}"]
+  },
+  "scope": {
+    "value": "openid"
+  },
+  "redirect_uri": {
+    "regexp": "^https://${basic_rp_redirect_host//./\\.}(/.*)?$"
+  },
+  "response_type": {
+    "one_of": ["code"]
+  }
+}
+EOF_JSON
+  echo "Installed basic RP policy in ${oidc_unregistered_policy_file}"
+
+  mkdir -p "$(dirname "${oidc_client_metadata_file}")"
+  python3 - "${oidc_client_metadata_file}" "${basic_rp_scope}" "${basic_rp_redirect_uri}" "${basic_rp_client_id}" "${basic_rp_client_secret}" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+scope = sys.argv[2]
+redirect_uri = sys.argv[3]
+client_id = sys.argv[4]
+client_secret = sys.argv[5]
+
+doc = [
+    {
+        "scope": scope,
+        "redirect_uris": [redirect_uri],
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "response_types": ["code"],
+        "grant_types": ["authorization_code"],
+    }
+]
+
+path.write_text(json.dumps(doc, indent=2) + "\n")
+PY
+  echo "Installed basic RP metadata in ${oidc_client_metadata_file}"
   did_mutate="true"
 fi
 
@@ -435,7 +557,7 @@ if [[ "${list_installed_modules}" == "true" ]]; then
   docker exec "${idp_container}" /bin/sh -c 'cd /opt/shibboleth-idp/bin && ./module.sh -l' 2>&1 | cat
 fi
 
-if [[ "${replace_credentials}" == "false" && "${replace_default_rules}" == "false" && "${replace_oidc_credentials}" == "false" && "${replace_oidc_issuer}" == "false" && "${replace_relying_party}" == "false" && "${generate_jwks}" == "false" && "${list_installed_modules}" == "false" ]]; then
+if [[ "${replace_credentials}" == "false" && "${replace_default_rules}" == "false" && "${replace_oidc_credentials}" == "false" && "${replace_oidc_clientinfo_resolvers}" == "false" && "${replace_oidc_issuer}" == "false" && "${install_basic_rp}" == "false" && "${replace_relying_party}" == "false" && "${generate_jwks}" == "false" && "${list_installed_modules}" == "false" ]]; then
   echo "No action requested." >&2
   usage
   exit 1
