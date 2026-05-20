@@ -58,11 +58,23 @@ idp.authn.LDAP.useStartTLS = false
 idp.authn.LDAP.useSSL = false
 idp.authn.LDAP.baseDN = ou=people,dc=op1,dc=dev,dc=localhost
 idp.authn.LDAP.bindDN = cn=admin,dc=op1,dc=dev,dc=localhost
-idp.authn.LDAP.bindDNCredential = adminpw
 idp.authn.LDAP.userFilter = (uid={user})
 idp.authn.LDAP.dnFormat = uid=%s,ou=people,dc=op1,dc=dev,dc=localhost
 idp.authn.LDAP.returnAttributes = uid mail givenName sn cn
 EOF
+
+# Keep LDAP bind secret in secrets.properties to avoid duplicate property warnings.
+python3 - <<'PY'
+from pathlib import Path
+
+secrets = Path("shibboleth-idp/credentials/secrets.properties")
+text = secrets.read_text()
+text = text.replace(
+    "idp.authn.LDAP.bindDNCredential              =myServicePassword",
+    "idp.authn.LDAP.bindDNCredential              =adminpw",
+)
+secrets.write_text(text)
+PY
 
 cat > shibboleth-idp/conf/authn/password-authn.properties <<'EOF'
 idp.authn.Password.validateAsExpression = LDAP
