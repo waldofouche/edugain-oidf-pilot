@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+readonly REQUIRED_COMMANDS=(
+  openssl
+  python3
+)
+
+readonly KEY_SPECS=(
+  "prime256v1|ES256|P-256|32|federation_ES256"
+  "prime256v1|ES256|P-256|32|federation_ES256f"
+  "secp521r1|ES512|P-521|66|federation_ES512"
+  "secp521r1|ES512|P-521|66|federation_ES512f"
+)
+
+umask 077
+
+log() {
+  printf '==> %s\n' "$*"
+}
+
+fail() {
+  printf 'Error: %s\n' "$*" >&2
+  exit 1
+}
+
+prompt_for_directory() {
+  local prompt="$1"
+  local default_dir="$2"
+  local input
+
+  read -r -p "${prompt} [${default_dir}]: " input
+
+  if [[ -z "${input}" ]]; then
+    printf '%s\n' "${default_dir}"
+  else
+    printf '%s\n' "${input}"
+  fi
+}
+
+require_commands() {
+  local cmd
+
+  for cmd in "${REQUIRED_COMMANDS[@]}"; do
+    command -v "${cmd}" >/dev/null 2>&1 \
+      || fail "${cmd} is required but was not found in PATH"
+  done
+}
+
+generate_ec_key() {
+  local curve="$1"
+  local out_file="$2"
+  local tmp_file
+
+  tmp_file="$(mktemp "${out_file}.XXXXXX.tmp")"
+
+  openssl ecparam \
+    -name "${curve}" \
+    -genkey \
+    -noout \
+    -out "${tmp_file}"
+
+  chmod 600 "${tmp_file}"
+  mv -f "${tmp_file}" "${out_file}"
+}
+
+build_jwk() {
+  local key_file="$1"
+  local alg="$2"
+  local crv="$3"
+  local kid="$4"
+  local coord_len="$5"
+
+  local pub_hex
+
+  pub_hex="$(
+    openssl ec \
+      -in "${key_file}" \
+      -pubout \
+      -text \
+      -noout 2>/dev/null |
+      awk '
+        /pub:/      { in_pub=1; next }
+        /ASN1 OID:/ { in_pub=0 }
+        in_pub {
+          gsub(/[:[:space:]]/, "")
+          printf "%s", $0
+        }
+      '
+  )"
+
+  [[ -n "${pub_hex}" ]] \
+    || fail "failed to extract public key bytes from ${key_file}"
+
+  [[ "${pub_hex:0:2}" == "04" ]] \
+    || fail "unexpected EC point format in ${key_file}"
+
+  python3 - "${pub_hex}" "${alg}" "${crv}" "${kid}" "${coord_len}" <<'PY'
+import base64
+import json
+import sys
+
+pub_hex, alg, crv, kid, coord_len = sys.argv[1:6]
+coord_len = int(coord_len)
+
+point = bytes.fromhex(pub_hex)
+
+expected_len = 1 + (coord_len * 2)
+
+if point[0] != 0x04 or len(point) != expected_len:
+    raise SystemExit(
+        f"invalid uncompressed EC point length for {kid}"
+    )
+
+x = point[1:1 + coord_len]
+y = point[1 + coord_len:]
+
+def b64u(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+print(json.dumps({
+    "kty": "EC",
+    "use": "sig",
+    "kid": kid,
+    "alg": alg,
+    "crv": crv,
+    "x": b64u(x),
+    "y": b64u(y),
+}, separators=(",", ":")))
+PY
+}
+
+write_jwks() {
+  local signing_dir="$1"
+  local jwks_file="$2"
+
+  local jwks=()
+  local spec
+  local curve alg crv coord_len kid
+  local key_file
+
+  for spec in "${KEY_SPECS[@]}"; do
+    IFS='|' read -r curve alg crv coord_len kid <<<"${spec}"
+
+    key_file="${signing_dir}/${kid}.pem"
+
+    generate_ec_key "${curve}" "${key_file}"
+
+    jwks+=(
+      "$(build_jwk "${key_file}" "${alg}" "${crv}" "${kid}" "${coord_len}")"
+    )
+  done
+
+  local tmp_jwks
+  tmp_jwks="$(mktemp "${jwks_file}.XXXXXX.tmp")"
+
+  (
+    IFS=,
+    printf '{"keys":[%s]}\n' "${jwks[*]}"
+  ) > "${tmp_jwks}"
+
+  chmod 600 "${tmp_jwks}"
+  mv -f "${tmp_jwks}" "${jwks_file}"
+}
+
+main() {
+  require_commands
+
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+  local default_key_dir="${script_dir}/data/keys"
+  local default_signing_dir="${script_dir}/data/signing"
+
+  local key_dir
+  local signing_dir
+
+  key_dir="$(
+    prompt_for_directory \
+      "Directory for legacy/private keys" \
+      "${default_key_dir}"
+  )"
+
+  signing_dir="$(
+    prompt_for_directory \
+      "Directory for signing keys and JWKS" \
+      "${default_signing_dir}"
+  )"
+
+  local legacy_key_file="${key_dir}/federation_es256.pem"
+  local jwks_file="${signing_dir}/keys.jwks"
+
+  mkdir -p "${key_dir}" "${signing_dir}"
+
+  log "Generating legacy federation key"
+  generate_ec_key "prime256v1" "${legacy_key_file}"
+
+  log "Generating signing keys and JWKS"
+  write_jwks "${signing_dir}" "${jwks_file}"
+
+  log "Private keys written to ${signing_dir}"
+  log "JWKS written to ${jwks_file}"
+}
+
+main "$@"
