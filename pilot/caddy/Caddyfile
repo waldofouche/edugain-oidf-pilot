@@ -34,6 +34,10 @@ op1.dev.localhost {
   }
 }
 
+ldap-ui.dev.localhost {
+  reverse_proxy ldap-ui:80
+}
+
 op2.dev.localhost {
   reverse_proxy mockia1:80
 }

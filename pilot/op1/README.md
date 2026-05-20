@@ -33,6 +33,12 @@ docker compose up -d
 docker compose down
 ```
 
+Seed LDAP users manually:
+
+```bash
+./seed-ldap.sh
+```
+
 Check status:
 
 ```bash
@@ -48,6 +54,11 @@ Local logs are available at:
 
 Use the existing Caddy route:
 - `https://op1.dev.localhost`
+
+LDAP admin UI:
+- `https://ldap-ui.dev.localhost`
+- Login DN: `cn=admin,dc=op1,dc=dev,dc=localhost`
+- Password: `adminpw`
 
 The upstream IdP uses a self-signed cert internally. Caddy terminates external TLS and proxies to IdP over HTTPS with local certificate verification disabled.
 

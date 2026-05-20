@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+required_hosts=(
+  ta.dev.localhost
+  ia1.dev.localhost
+  ia2.dev.localhost
+  rp1.dev.localhost
+  op1.dev.localhost
+  whoami.dev.localhost
+)
+
+if [[ -n "${EXTRA_HOSTS:-}" ]]; then
+  # Allow callers to append optional domains (space-separated).
+  # shellcheck disable=SC2206
+  required_hosts+=( ${EXTRA_HOSTS} )
+fi
+
+failures=0
+
+pass() {
+  echo "PASS: $1"
+}
+
+fail() {
+  echo "FAIL: $1"
+  failures=$((failures + 1))
+}
+
+check_host() {
+  local host="$1"
+  local code
+
+  code="$(curl -k -sS -o /dev/null -w "%{http_code}" --resolve "${host}:443:127.0.0.1" "https://${host}/" || true)"
+
+  case "${code}" in
+    000|502|503|504)
+      fail "host ${host} not reachable via Caddy (HTTP ${code})"
+      ;;
+    *)
+      pass "host ${host} reachable (HTTP ${code})"
+      ;;
+  esac
+}
+
+check_container_running() {
+  local name="$1"
+  local status
+
+  status="$(docker ps --filter "name=^${name}$" --format '{{.Status}}')"
+  if [[ -z "${status}" ]]; then
+    fail "container ${name} is not running"
+  else
+    pass "container ${name} running (${status})"
+  fi
+}
+
+check_ldap_user() {
+  local user="$1"
+
+  if docker exec op1-ldap-1 ldapsearch -x \
+    -H ldap://127.0.0.1:389 \
+    -D "cn=admin,dc=op1,dc=dev,dc=localhost" \
+    -w adminpw \
+    -b "ou=people,dc=op1,dc=dev,dc=localhost" \
+    "(uid=${user})" uid 2>/dev/null | grep -q "^uid: ${user}$"; then
+    pass "LDAP user ${user} exists"
+  else
+    fail "LDAP user ${user} missing"
+  fi
+}
+
+check_attribute_resolution() {
+  local output
+
+  output="$(docker exec op1-shibop1-1 /opt/shibboleth-idp/bin/aacli.sh \
+    -n alice \
+    -r https://sp1.dev.localhost/saml/metadata \
+    --saml2 2>/dev/null || true)"
+
+  if [[ -z "${output}" ]]; then
+    fail "AACLI returned no output"
+    return
+  fi
+
+  if ! grep -q "<saml2:Assertion" <<<"${output}"; then
+    fail "AACLI did not return a SAML2 assertion"
+    return
+  fi
+
+  if grep -q "schacHomeOrganization" <<<"${output}"; then
+    pass "attribute resolution test succeeded"
+  else
+    fail "attribute resolution returned assertion without expected attributes"
+  fi
+}
+
+echo "== Host reachability checks =="
+for host in "${required_hosts[@]}"; do
+  check_host "${host}"
+done
+
+echo
+echo "== OP1 service checks =="
+check_container_running op1-ldap-1
+check_container_running op1-shibop1-1
+
+echo
+echo "== LDAP content checks =="
+check_ldap_user alice
+check_ldap_user bob
+
+echo
+echo "== Shibboleth attribute resolution check =="
+check_attribute_resolution
+
+echo
+if [[ "${failures}" -eq 0 ]]; then
+  echo "All checks passed."
+  exit 0
+fi
+
+echo "${failures} check(s) failed."
+exit 1
+
