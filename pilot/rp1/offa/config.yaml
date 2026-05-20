@@ -10,18 +10,18 @@ logging:
 
 sessions:
   ttl: 3600
-  cookie_domain: oidf-pilot.edugain.org
+  cookie_domain: .dev.localhost
 
 auth:
-    - domain: whoami.oidf-pilot.edugain.org
+    - domain: whoami.dev.localhost
 
 federation:
-  entity_id: https://rp1.oidf-pilot.edugain.org
+  entity_id: https://rp1.dev.localhost
   trust_anchors:
-    - entity_id: https://ta.oidf-pilot.edugain.org
-    - entity_id: https://ia1.oidf-pilot.edugain.org
+    - entity_id: https://ta.dev.localhost
+    - entity_id: https://ia1.dev.localhost
   authority_hints:
-    - https://ia1.oidf-pilot.edugain.org
+    - https://ia1.dev.localhost
   organization_name: "eduGAIN"
   use_resolve_endpoint: true
 

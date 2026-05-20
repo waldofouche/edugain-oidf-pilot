@@ -1,8 +1,12 @@
-import caddy-secrets
+{
+  local_certs
+}
 
-ta.oidf-pilot.edugain.org {
+import caddy-secrets/default.caddy
+
+ta.dev.localhost {
   handle_path /static/* {
-    root * /static/ta.oidf-pilot.edugain.org
+    root * /static/ta.dev.localhost
     file_server
   }
   handle {
@@ -10,27 +14,27 @@ ta.oidf-pilot.edugain.org {
   }
 }
 
-ia1.oidf-pilot.edugain.org {
+ia1.dev.localhost {
   reverse_proxy goia1:8765
 }
 
-ia2.oidf-pilot.edugain.org {
+ia2.dev.localhost {
   reverse_proxy goia2:8765
 }
 
-rp1.oidf-pilot.edugain.org {
+rp1.dev.localhost {
   reverse_proxy offa:15661
 }
 
-op1.oidf-pilot.edugain.org {
+op1.dev.localhost {
   reverse_proxy shibop1:8080
 }
 
-op2.oidf-pilot.edugain.org {
+op2.dev.localhost {
   reverse_proxy mockia1:80
 }
 
-whoami.oidf-pilot.edugain.org {
+whoami.dev.localhost {
    forward_auth offa:15661 {
       uri /auth
       copy_headers X-Forwarded-User X-Forwarded-Groups X-Forwarded-Name X-Forwarded-Email X-Forwarded-Provider X-Forwarded-Subject
@@ -39,6 +43,6 @@ whoami.oidf-pilot.edugain.org {
    reverse_proxy whoami:80
 }
 
-rp2.oidf-pilot.edugain.org {
+rp2.dev.localhost {
    reverse_proxy rp2:80
 }

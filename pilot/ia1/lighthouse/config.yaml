@@ -4,11 +4,11 @@ signing:
   alg: ES256
   key_dir: "/data/signing/"
 federation_data:
-  entity_id: "https://ia1.oidf-pilot.edugain.org"
+  entity_id: "https://ia1.dev.localhost"
   authority_hints:
-    - "https://ta.oidf-pilot.edugain.org"
+    - "https://ta.dev.localhost"
   trust_anchors:
-    - entity_id: "https://ta.oidf-pilot.edugain.org"
+    - entity_id: "https://ta.dev.localhost"
   federation_entity_metadata:
     display_name: "eduGAIN OIDF Pilot Intermediate Authority 1"
     organization_name: "eduGAIN"

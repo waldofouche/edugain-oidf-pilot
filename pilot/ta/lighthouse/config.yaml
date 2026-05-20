@@ -4,7 +4,7 @@ signing:
   alg: ES256
   key_dir: "/data/signing/"
 federation_data:
-  entity_id: "https://ta.oidf-pilot.edugain.org"
+  entity_id: "https://ta.dev.localhost"
   federation_entity_metadata:
     display_name: "eduGAIN OIDF Pilot Trust Anchor"
     organization_name: "eduGAIN"

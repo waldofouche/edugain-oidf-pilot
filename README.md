@@ -20,10 +20,10 @@ For more information about eduGAIN please visit:
 ## Pilot environment
 
 The pilot environment consists of the following elements:
-- https://ta.oidf-pilot.edugain.org: the eduGAIN OpenID Federation Pilot Trust Anchor, based on the LightHouse OIDFed Trust Anchor (https://go-oidfed.github.io/lighthouse/).  
-- https://ia1.oidf-pilot.edugain.org: Intermediate Authority 1, which is an entity controlled by the pilot team that acts as a mock federation. It's a subordinate of the eduGAIN-TA based on the LightHouse OIDFed Trust Anchor.
-- https://ia2.oidf-pilot.edugain.org: Intermediate Authority 2, which is an entity controlled by the pilot team that acts as a mock federation. It's a subordinate of the eduGAIN-TA based on the LightHouse OIDFed Trust Anchor.
-- https://rp1.oidf-pilot.edugain.org: Relaying Party 1, which is an entity controlled by the pilot team offering a simple OIDFed Relaying Party. It's a subordinate of the Intermediate Authority 1. It's based on OFFA - Openid Federation Forward Auth (https://go-oidfed.github.io/offa/).
+- https://ta.dev.localhost: the eduGAIN OpenID Federation Pilot Trust Anchor, based on the LightHouse OIDFed Trust Anchor (https://go-oidfed.github.io/lighthouse/).
+- https://ia1.dev.localhost: Intermediate Authority 1, which is an entity controlled by the pilot team that acts as a mock federation. It's a subordinate of the eduGAIN-TA based on the LightHouse OIDFed Trust Anchor.
+- https://ia2.dev.localhost: Intermediate Authority 2, which is an entity controlled by the pilot team that acts as a mock federation. It's a subordinate of the eduGAIN-TA based on the LightHouse OIDFed Trust Anchor.
+- https://rp1.dev.localhost: Relaying Party 1, which is an entity controlled by the pilot team offering a simple OIDFed Relaying Party. It's a subordinate of the Intermediate Authority 1. It's based on OFFA - Openid Federation Forward Auth (https://go-oidfed.github.io/offa/).
 
 
 ```mermaid
@@ -75,20 +75,20 @@ Intermediate Authorities must respect the following requirements:
   - `federation_resolve_endpoint` as described in [https://openid.net/specs/openid-federation-1_0.html#name-resolve-entity]. The resolve endpoint MUST accept queries with the `trust_anchor` parameter equals to:
     - the Intermediate Authority.
     - the eduGAIN Trust Anchor.
-  - list the eduGAIN OIDF Pilot TA --- "https://ta.oidf-pilot.edugain.org" --- as one of their Trust Anchor. 
+  - list the eduGAIN OIDF Pilot TA --- "https://ta.dev.localhost" --- as one of their Trust Anchor.
  
 ### eduGAIN Pilot Entities Configurations
 
 Here you can find some example Entity Configurations provided by the current
 eduGAIN OpenID Federation Pilot entities.
 
-- eduGAIN OpenID Federation Pilot Trust Anchor - https://ta.oidf-pilot.edugain.org 
+- eduGAIN OpenID Federation Pilot Trust Anchor - https://ta.dev.localhost
 
 ```
 {
   "exp": 1752246223.7172408,
   "iat": 1752159823.7172408,
-  "iss": "https://ta.oidf-pilot.edugain.org",
+  "iss": "https://ta.dev.localhost",
   "jwks": {
     "keys": [
       {
@@ -109,28 +109,28 @@ eduGAIN OpenID Federation Pilot entities.
         "support@edugain.org"
       ],
       "display_name": "eduGAIN OIDF Pilot Trust Anchor",
-      "federation_enroll_endpoint": "https://ta.oidf-pilot.edugain.org/enroll",
-      "federation_fetch_endpoint": "https://ta.oidf-pilot.edugain.org/fetch",
-      "federation_list_endpoint": "https://ta.oidf-pilot.edugain.org/list",
-      "federation_resolve_endpoint": "https://ta.oidf-pilot.edugain.org/resolve",
+      "federation_enroll_endpoint": "https://ta.dev.localhost/enroll",
+      "federation_fetch_endpoint": "https://ta.dev.localhost/fetch",
+      "federation_list_endpoint": "https://ta.dev.localhost/list",
+      "federation_resolve_endpoint": "https://ta.dev.localhost/resolve",
       "organization_name": "eduGAIN",
       "organization_uri": "https://edugain.org"
     }
   },
-  "sub": "https://ta.oidf-pilot.edugain.org"
+  "sub": "https://ta.dev.localhost"
 }
 ```
 
-- Intermediate Authority 2 - https://ia2.oidf-pilot.edugain.org
+- Intermediate Authority 2 - https://ia2.dev.localhost
 
 ```
 {
   "authority_hints": [
-    "https://ta.oidf-pilot.edugain.org"
+    "https://ta.dev.localhost"
   ],
   "exp": 1752246518.9038033,
   "iat": 1752160118.9038033,
-  "iss": "https://ia2.oidf-pilot.edugain.org",
+  "iss": "https://ia2.dev.localhost",
   "jwks": {
     "keys": [
       {
@@ -151,15 +151,15 @@ eduGAIN OpenID Federation Pilot entities.
         "support@edugain.org"
       ],
       "display_name": "eduGAIN OIDF Pilot Intermediate Authority 2",
-      "federation_enroll_endpoint": "https://ia2.oidf-pilot.edugain.org/enroll",
-      "federation_fetch_endpoint": "https://ia2.oidf-pilot.edugain.org/fetch",
-      "federation_list_endpoint": "https://ia2.oidf-pilot.edugain.org/list",
-      "federation_resolve_endpoint": "https://ia2.oidf-pilot.edugain.org/resolve",
+      "federation_enroll_endpoint": "https://ia2.dev.localhost/enroll",
+      "federation_fetch_endpoint": "https://ia2.dev.localhost/fetch",
+      "federation_list_endpoint": "https://ia2.dev.localhost/list",
+      "federation_resolve_endpoint": "https://ia2.dev.localhost/resolve",
       "organization_name": "eduGAIN",
       "organization_uri": "https://edugain.org"
     }
   },
-  "sub": "https://ia2.oidf-pilot.edugain.org"
+  "sub": "https://ia2.dev.localhost"
 }
 ```
 
