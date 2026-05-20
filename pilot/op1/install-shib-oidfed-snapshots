@@ -10,9 +10,8 @@ set -euo pipefail
 
 idp_container="${IDP_CONTAINER:-op1-shibop1-1}"
 plugin_bin="/opt/shibboleth-idp/bin/plugin.sh"
-idp_home="/opt/shibboleth-idp"
 snapshot_keys_url="${SNAPSHOT_KEYS_URL:-https://shibboleth.net/downloads/SHIBBOLETH_SNAPSHOT_PGP_KEYS}"
-snapshot_keys_file="${idp_home}/SHIBBOLETH_SNAPSHOT_PGP_KEYS"
+snapshot_keys_file="${SNAPSHOT_KEYS_FILE:-/tmp/SHIBBOLETH_SNAPSHOT_PGP_KEYS}"
 dry_run="false"
 
 oidc_common_base="${OIDC_COMMON_BASE_URL:-https://build.shibboleth.net/maven/snapshots/net/shibboleth/oidc/oidc-common-dist/3.4.0-SNAPSHOT/}"
@@ -67,6 +66,7 @@ Usage:
 Optional:
   IDP_CONTAINER=<container-name>   (default: op1-shibop1-1)
   SNAPSHOT_KEYS_URL=<url>
+  SNAPSHOT_KEYS_FILE=<path-inside-container>   (default: /tmp/SHIBBOLETH_SNAPSHOT_PGP_KEYS)
 
 Override snapshot directories:
   OIDC_COMMON_BASE_URL=<url>
@@ -123,7 +123,7 @@ if [[ "${dry_run}" == "true" ]]; then
 fi
 
 echo "Downloading snapshot PGP key bundle inside ${idp_container}..."
-docker exec "${idp_container}" /bin/sh -c "cd '${idp_home}' && wget -q -O '${snapshot_keys_file##*/}' '${snapshot_keys_url}'"
+docker exec "${idp_container}" /bin/sh -c "set -e; if command -v curl >/dev/null 2>&1; then curl -fsSL '${snapshot_keys_url}' -o '${snapshot_keys_file}'; else wget -q -O '${snapshot_keys_file}' '${snapshot_keys_url}'; fi"
 
 echo "Installing plugins..."
 for url in "${install_urls[@]}"; do
