@@ -16,8 +16,31 @@ objectClass: top
 cn: Alice Example
 sn: Example
 givenName: Alice
-mail: alice@op1.dev.localhost
+displayName: Alice Example
+title: Senior Researcher
+description: Demo user Alice for local pilot testing
+employeeNumber: 1001
+employeeType: staff
+departmentNumber: D-IT-01
+ou: Research and Identity
+o: eduGAIN OIDF Pilot
+businessCategory: Education
+physicalDeliveryOfficeName: Building A
+street: 1 Federation Way
+l: Testville
+st: Test State
+postalCode: 00001
+postOfficeBox: PO Box 101
+telephoneNumber: +1 555 0101
+homePhone: +1 555 1101
+mobile: +1 555 2101
+facsimileTelephoneNumber: +1 555 3101
 uid: alice
+mail: alice@op1.dev.localhost
+labeledURI: https://op1.dev.localhost/alice
+preferredLanguage: en
+initials: AE
+carLicense: TEST-ALICE-001
 userPassword: alicepw
 
 dn: uid=bob,ou=people,dc=op1,dc=dev,dc=localhost
@@ -28,8 +51,31 @@ objectClass: top
 cn: Bob Example
 sn: Example
 givenName: Bob
-mail: bob@op1.dev.localhost
+displayName: Bob Example
+title: Platform Engineer
+description: Demo user Bob for local pilot testing
+employeeNumber: 1002
+employeeType: staff
+departmentNumber: D-ENG-02
+ou: Engineering
+o: eduGAIN OIDF Pilot
+businessCategory: Education
+physicalDeliveryOfficeName: Building B
+street: 2 Federation Way
+l: Testville
+st: Test State
+postalCode: 00002
+postOfficeBox: PO Box 102
+telephoneNumber: +1 555 0102
+homePhone: +1 555 1102
+mobile: +1 555 2102
+facsimileTelephoneNumber: +1 555 3102
 uid: bob
+mail: bob@op1.dev.localhost
+labeledURI: https://op1.dev.localhost/bob
+preferredLanguage: en
+initials: BE
+carLicense: TEST-BOB-002
 userPassword: bobpw
 
 dn: cn=users,ou=groups,dc=op1,dc=dev,dc=localhost
@@ -38,4 +84,3 @@ objectClass: top
 cn: users
 member: uid=alice,ou=people,dc=op1,dc=dev,dc=localhost
 member: uid=bob,ou=people,dc=op1,dc=dev,dc=localhost
-
