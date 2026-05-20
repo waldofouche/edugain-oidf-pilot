@@ -1,9 +1,13 @@
-{
-    email edugain-oidf@lists.geant.org
-}
+import caddy-secrets
 
 ta.oidf-pilot.edugain.org {
-  reverse_proxy gota:8765
+  handle_path /static/* {
+    root * /static/ta.oidf-pilot.edugain.org
+    file_server
+  }
+  handle {
+    reverse_proxy gota:8765
+  }
 }
 
 ia1.oidf-pilot.edugain.org {
@@ -22,7 +26,11 @@ op1.oidf-pilot.edugain.org {
   reverse_proxy shibop1:8080
 }
 
-whoami-oidf-pilot.aai.garr.it {
+op2.oidf-pilot.edugain.org {
+  reverse_proxy mockia1:80
+}
+
+whoami.oidf-pilot.edugain.org {
    forward_auth offa:15661 {
       uri /auth
       copy_headers X-Forwarded-User X-Forwarded-Groups X-Forwarded-Name X-Forwarded-Email X-Forwarded-Provider X-Forwarded-Subject
@@ -31,11 +39,6 @@ whoami-oidf-pilot.aai.garr.it {
    reverse_proxy whoami:80
 }
 
-op2.oidf-pilot.edugain.org {
-   forward_auth offa:15661 {
-      uri /auth
-      copy_headers X-Forwarded-User X-Forwarded-Groups X-Forwarded-Name X-Forwarded-Email X-Forwarded-Provider X-Forwarded-Subject
-   }
-
-   reverse_proxy whoami:80
+rp2.oidf-pilot.edugain.org {
+   reverse_proxy rp2:80
 }

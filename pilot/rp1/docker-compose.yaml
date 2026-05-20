@@ -1,10 +1,10 @@
 services:
   offa:
-    image: oidfed/offa:main
+    image: oidfed/offa:0.4.2
     restart: unless-stopped
     volumes:
       - ./offa/config.yaml:/config.yaml:ro
-      - ./offa:/data
+      - ./offa/data:/data
     networks:
       - caddy
 

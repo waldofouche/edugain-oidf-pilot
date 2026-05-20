@@ -1,18 +1,8 @@
 server:
   port: 8765
-
-logging:
-  access:
-    level: debug
-    stderr: true
-  internal:
-    level: debug
-    stderr: true
-
 signing:
   alg: ES512
-  key_dir: "/data/signing"
-
+  key_dir: "/data/signing/"
 federation_data:
   entity_id: "https://ia2.oidf-pilot.edugain.org"
   federation_entity_metadata:
@@ -26,11 +16,9 @@ federation_data:
     - entity_id: "https://ta.oidf-pilot.edugain.org"
   authority_hints:
     - "https://ta.oidf-pilot.edugain.org"
-
 storage:
   backend: json
   data_dir: "/data/storage"
-
 endpoints:
   fetch:
     path: "/fetch"
@@ -40,3 +28,11 @@ endpoints:
     path: "/resolve"
   enroll:
     path: "/enroll"
+logging:
+  access:
+    stderr: true
+  internal:
+    stderr: true
+  smart:
+    enabled:true
+

@@ -1,0 +1,30 @@
+{
+    "openid_provider": {
+	"organization_name": {
+	    "essential": true
+	},
+	"display_name": {
+	    "essential": true
+	},
+	"organization_uri": {
+	    "essential": true
+	},
+	"contacts": {
+	    "essential": true
+	}
+    },
+    "openid_relying_party": {
+	"organization_name": {
+	    "essential": true
+	},
+	"display_name": {
+	    "essential": true
+	},
+	"organization_uri": {
+	    "essential": true
+	},
+	"contacts": {
+	    "essential": true
+	}
+    } 
+}
