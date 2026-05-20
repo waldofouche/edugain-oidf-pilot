@@ -1,0 +1,486 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+idp_container="${IDP_CONTAINER:-op1-shibop1-1}"
+credentials_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/credentials.xml"
+default_rules_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/attributes/default-rules.xml"
+oidc_credentials_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/oidc-credentials.xml"
+oidc_properties_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/oidc.properties"
+openid_configuration_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/static/openid-configuration.json"
+relying_party_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/relying-party.xml"
+
+list_installed_modules="false"
+replace_credentials="true"
+replace_default_rules="true"
+replace_oidc_credentials="true"
+replace_oidc_issuer="true"
+replace_relying_party="true"
+generate_jwks="true"
+did_mutate="false"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  ./configure-shib-oidfed-snapshots [--list-installed-modules] [--no-replace-credentials] [--no-replace-default-rules] [--no-replace-oidc-credentials] [--no-replace-oidc-issuer] [--no-replace-relying-party] [--no-generate-jwks]
+
+Flags:
+  --list-installed-modules    List modules from the running IdP container
+  --no-replace-credentials    Do not replace credentials.xml
+  --no-replace-default-rules  Do not replace default-rules.xml
+  --no-replace-oidc-credentials Do not replace oidc-credentials.xml
+  --no-replace-oidc-issuer    Do not replace idp.oidc.issuer in oidc.properties
+  --no-replace-relying-party  Do not replace relying-party.xml
+  --no-generate-jwks          Do not generate JWK credential files in /opt/shibboleth-idp/credentials
+  --help, -h                  Show this help
+
+Optional env vars:
+  IDP_CONTAINER=<container-name>      default: op1-shibop1-1
+EOF
+}
+
+for arg in "$@"; do
+  case "${arg}" in
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --list-installed-modules)
+      list_installed_modules="true"
+      ;;
+    --no-replace-credentials)
+      replace_credentials="false"
+      ;;
+    --no-replace-default-rules)
+      replace_default_rules="false"
+      ;;
+    --no-replace-oidc-credentials)
+      replace_oidc_credentials="false"
+      ;;
+    --no-replace-oidc-issuer)
+      replace_oidc_issuer="false"
+      ;;
+    --no-replace-relying-party)
+      replace_relying_party="false"
+      ;;
+    --no-generate-jwks)
+      generate_jwks="false"
+      ;;
+    *)
+      echo "Error: unknown argument: ${arg}" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Error: docker is required" >&2
+  exit 1
+fi
+
+if [[ -z "$(docker ps --filter "name=^${idp_container}$" --format '{{.Names}}')" ]]; then
+  echo "Error: IdP container ${idp_container} is not running" >&2
+  exit 1
+fi
+
+if [[ "${replace_credentials}" == "true" ]]; then
+  cat > "${credentials_file}" <<'EOF_XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+
+       default-init-method="initialize"
+       default-destroy-method="destroy">
+
+    <!--
+    This defines the signing and encryption key and certificate pairs referenced by your relying-party.xml
+    configuration. You don't normally need to touch this, unless you have advanced requirements such as
+    supporting multiple sets of keys for different relying parties, in which case you may want to define
+    all your credentials here for convenience.
+    -->
+
+    <!--
+    The list of ALL of your IdP's signing credentials. If you define additional signing credentials,
+    for example for specific relying parties or different key types, make sure to include them within this list.
+    -->
+    <util:list id="shibboleth.SigningCredentials">
+        <ref bean="shibboleth.DefaultSigningCredential" />
+    </util:list>
+
+    <!-- Your IdP's default signing key, set via property file. -->
+    <bean id="shibboleth.DefaultSigningCredential" parent="shibboleth.BasicX509CredentialFactoryBean"
+        p:privateKeyResource="%{idp.signing.key}"
+        p:certificateResource="%{idp.signing.cert}"
+        p:entityId-ref="entityID" />
+
+    <!-- Your IdP's default client TLS credential, by default the same as the default signing credential. -->
+    <alias alias="shibboleth.DefaultClientTLSCredential" name="shibboleth.DefaultSigningCredential" />
+
+    <!--
+    The list of ALL of your IdP's encryption credentials. By default this is just an alias
+    for 'shibboleth.DefaultEncryptionCredentials'. It could be re-defined as
+    a list with additional credentials if needed.
+    -->
+    <alias alias="shibboleth.EncryptionCredentials" name="shibboleth.DefaultEncryptionCredentials" />
+
+    <!-- Your IdP's default encryption (really decryption) keys, set via property file. -->
+    <util:list id="shibboleth.DefaultEncryptionCredentials">
+        <bean parent="shibboleth.BasicX509CredentialFactoryBean"
+            p:privateKeyResource="%{idp.encryption.key}"
+            p:certificateResource="%{idp.encryption.cert}"
+            p:entityId-ref="entityID" />
+
+        <!--
+        For key rollover, uncomment and point to your original keypair, and use the one above
+        to point to your new keypair. Once metadata has propagated, comment this one out again.
+        -->
+        <!--
+        <bean parent="shibboleth.BasicX509CredentialFactoryBean"
+            p:privateKeyResource="%{idp.encryption.key.2}"
+            p:certificateResource="%{idp.encryption.cert.2}"
+            p:entityId-ref="entityID" />
+        -->
+    </util:list>
+
+    <!-- OIDC extension default credential definitions -->
+    <import resource="oidc-credentials.xml" />
+
+</beans>
+EOF_XML
+  echo "Replaced ${credentials_file}"
+  did_mutate="true"
+fi
+
+if [[ "${replace_default_rules}" == "true" ]]; then
+  cat > "${default_rules_file}" <<'EOF_XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+
+       default-init-method="initialize"
+       default-destroy-method="destroy">
+
+    <!-- Default Attribute transcoding rules. -->
+
+    <!--
+    Many if not most of these attributes are not suited or may even be actively discouraged
+    from use in federated protocols, but this is merely a set of well-known definitions, not
+    a recommended set to support or use.
+    -->
+
+    <import resource="inetOrgPerson.xml" />
+    <import resource="eduPerson.xml" />
+    <import resource="eduCourse.xml" />
+    <import resource="schac.xml" />
+    <import resource="samlSubject.xml" />
+    <import resource="oidc-claim-rules.xml" />
+
+</beans>
+EOF_XML
+  echo "Replaced ${default_rules_file}"
+  did_mutate="true"
+fi
+
+if [[ "${replace_oidc_credentials}" == "true" ]]; then
+  cat > "${oidc_credentials_file}" <<'EOF_XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:util="http://www.springframework.org/schema/util" xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:c="http://www.springframework.org/schema/c" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+
+    default-init-method="initialize" default-destroy-method="destroy">
+
+    <!--
+    This file contains default OIDC signing credentials. This file should be imported into credentials.xml.
+    -->
+
+    <bean id="shibboleth.oidc.DefaultRSSigningCredential" parent="shibboleth.JWKCredential"
+        p:resource="%{idp.signing.oidc.rs.key}" />
+
+    <bean id="shibboleth.oidc.DefaultESSigningCredential" parent="shibboleth.JWKCredential"
+        p:resource="%{idp.signing.oidc.es.key}" />
+
+    <bean id="shibboleth.oidc.DefaultRSAEncryptionCredential" parent="shibboleth.JWKCredential"
+        p:resource="%{idp.signing.oidc.rsa.enc.key}" />
+
+    <bean id="shibboleth.oidc.DefaultES384SigningCredential" parent="shibboleth.JWKCredential"
+          p:resource="/opt/shibboleth-idp/credentials/idp-signing-es384.jwk" />
+
+    <bean id="shibboleth.oidc.DefaultES512SigningCredential" parent="shibboleth.JWKCredential"
+          p:resource="/opt/shibboleth-idp/credentials/idp-signing-es512.jwk" />
+
+    <!--
+    Lists ALL of your OP's response signing credentials for the default security configuration.
+    If you define additional signing credentials make sure to include them within this list.
+    -->
+    <util:list id="shibboleth.oidc.SigningCredentials">
+        <ref bean="shibboleth.oidc.DefaultRSSigningCredential" />
+        <ref bean="shibboleth.oidc.DefaultESSigningCredential" />
+    </util:list>
+
+    <!--
+    Lists ALL of your OP's request decryption credentials for the default security configuration.
+    If you  define additional decryption credentials make sure to include them within this list.
+    -->
+    <util:list id="shibboleth.oidc.EncryptionCredentials">
+        <ref bean="shibboleth.oidc.DefaultRSAEncryptionCredential" />
+    </util:list>
+
+    <!--
+    If you need to publish a key set different from shibboleth.oidc.EncryptionCredentials, define
+    a list bean named "shibboleth.oidc.EncryptionCredentialsToPublish".
+    -->
+
+    <!-- Example of two active encryption credentials, but only publishing the second before removing from use. -->
+    <!--
+    <util:list id="shibboleth.oidc.EncryptionCredentialsToPublish">
+        <ref bean="shibboleth.oidc.OnlyNewDefaultRSAEncryptionCredential" />
+    </util:list>
+    -->
+
+    <!--
+    If you need to publish a key set different from shibboleth.oidc.SigningCredentials, define
+    a list bean named "shibboleth.oidc.SigningCredentialsToPublish".
+    -->
+
+    <!-- Example of publishing two signing credentials, before active use. -->
+    <!--
+    <util:list id="shibboleth.oidc.SigningCredentialsToPublish">
+        <ref bean="shibboleth.oidc.DefaultRSSigningCredential" />
+        <ref bean="shibboleth.oidc.DefaultESSigningCredential" />
+        <ref bean="shibboleth.oidc.UpcomingDefaultRSSigningCredential" />
+    </util:list>
+    -->
+
+</beans>
+EOF_XML
+  echo "Replaced ${oidc_credentials_file}"
+  did_mutate="true"
+fi
+
+if [[ "${replace_oidc_issuer}" == "true" ]]; then
+  if [[ ! -f "${oidc_properties_file}" ]]; then
+    echo "Error: file not found: ${oidc_properties_file}" >&2
+    exit 1
+  fi
+
+  python3 - "${oidc_properties_file}" <<'PY'
+import pathlib
+import re
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text()
+new_text, count = re.subn(
+    r'^\s*idp\.oidc\.issuer\s*=\s*.*$',
+    'idp.oidc.issuer = https://op1.dev.localhost',
+    text,
+    count=1,
+    flags=re.MULTILINE,
+)
+
+if count == 0:
+    raise SystemExit('Could not find idp.oidc.issuer setting to replace')
+
+path.write_text(new_text)
+PY
+  echo "Updated issuer in ${oidc_properties_file}"
+
+  if [[ -f "${openid_configuration_file}" ]]; then
+    python3 - "${openid_configuration_file}" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text()
+text = text.replace("{{ service_name }}", "op1.dev.localhost")
+path.write_text(text)
+PY
+    echo "Updated discovery template in ${openid_configuration_file}"
+  fi
+
+  did_mutate="true"
+fi
+
+if [[ "${replace_relying_party}" == "true" ]]; then
+  cat > "${relying_party_file}" <<'EOF_XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+
+       default-init-method="initialize"
+       default-destroy-method="destroy">
+
+    <!--
+    Unverified RP configuration, defaults to no support for any profiles. Add <ref> elements to the list
+    to enable specific default profile settings (as below), or create new beans inline to override defaults.
+
+    "Unverified" typically means the IdP has no metadata, or equivalent way of assuring the identity and
+    legitimacy of a requesting system. To run an "open" IdP, you can enable profiles here.
+    -->
+    <bean id="shibboleth.UnverifiedRelyingParty" parent="RelyingParty">
+        <property name="profileConfigurations">
+            <list>
+            <!-- <bean parent="SAML2.SSO" p:encryptAssertions="false" /> -->
+                <ref bean="OIDC.Keyset" />
+                <ref bean="OIDC.Configuration" />
+            </list>
+        </property>
+    </bean>
+
+    <!--
+    Default configuration, with default settings applied for all profiles.
+
+    Take care with any defaults you apply at this level because you will have to create
+    overrides or apply metadata tags for every single SP that requires a different setting.
+    Changed defaults should be things you really do want to apply to nearly every SP.
+    -->
+    <bean id="shibboleth.DefaultRelyingParty" parent="RelyingParty">
+        <property name="profileConfigurations">
+            <list>
+                <!-- SAML 1.1 and SAML 2.0 AttributeQuery are disabled by default. -->
+                <!--
+                <ref bean="Shibboleth.SSO" />
+                <ref bean="SAML1.AttributeQuery" />
+                <ref bean="SAML1.ArtifactResolution" />
+                -->
+                <ref bean="SAML2.SSO" />
+                <ref bean="SAML2.ECP" />
+                <ref bean="SAML2.Logout" />
+                <!--
+                <ref bean="SAML2.AttributeQuery" />
+                -->
+                <ref bean="SAML2.ArtifactResolution" />
+                <ref bean="OIDC.SSO" />
+                <ref bean="OIDC.UserInfo"/>
+                <ref bean="OAUTH2.Token"/>
+                <ref bean="OAUTH2.Revocation"/>
+                <ref bean="OAUTH2.Introspection" />
+            </list>
+        </property>
+    </bean>
+
+    <!-- Container for any overrides you want to add. -->
+
+    <util:list id="shibboleth.RelyingPartyOverrides">
+
+        <!--
+        Override example that identifies a single RP by name and configures it
+        for SAML 2 SSO without encryption. This is a common "vendor" scenario.
+        -->
+        <!--
+        <bean id="ExampleSP" parent="RelyingPartyByName" c:relyingPartyIds="https://sp.example.org">
+            <property name="profileConfigurations">
+                <list>
+                    <bean parent="SAML2.SSO" p:encryptAssertions="false" />
+                </list>
+            </property>
+        </bean>
+        -->
+
+    </util:list>
+
+</beans>
+EOF_XML
+  echo "Replaced ${relying_party_file}"
+  did_mutate="true"
+fi
+
+if [[ "${generate_jwks}" == "true" ]]; then
+  echo "Generating JWK credentials in ${idp_container}:/opt/shibboleth-idp/credentials ..."
+  docker exec "${idp_container}" /bin/sh -c '
+    set -e
+    cd /opt/shibboleth-idp
+    bin/jwtgen.sh -t RSA -s 2048 -u sig -i defaultRSASign | tail -n +2 > credentials/idp-signing-rs.jwk
+    bin/jwtgen.sh -t EC -c P-256 -u sig -i defaultECSign | tail -n +2 > credentials/idp-signing-es.jwk
+    bin/jwtgen.sh -t RSA -s 2048 -u enc -i defaultRSAEnc | tail -n +2 > credentials/idp-encryption-rsa.jwk
+    bin/jwtgen.sh -t EC -c P-384 -u sig -i defaultEC384Sign | tail -n +2 > credentials/idp-signing-es384.jwk
+    bin/jwtgen.sh -t EC -c P-521 -u sig -i defaultEC512Sign | tail -n +2 > credentials/idp-signing-es512.jwk
+  '
+  echo "Generated JWK files:"
+  docker exec "${idp_container}" /bin/sh -c 'ls -1 /opt/shibboleth-idp/credentials/idp-signing-rs.jwk /opt/shibboleth-idp/credentials/idp-signing-es.jwk /opt/shibboleth-idp/credentials/idp-encryption-rsa.jwk /opt/shibboleth-idp/credentials/idp-signing-es384.jwk /opt/shibboleth-idp/credentials/idp-signing-es512.jwk' | cat
+  did_mutate="true"
+fi
+
+
+if [[ "${list_installed_modules}" == "true" ]]; then
+  echo "Installed modules in ${idp_container}:"
+  docker exec "${idp_container}" /bin/sh -c 'cd /opt/shibboleth-idp/bin && ./module.sh -l' 2>&1 | cat
+fi
+
+if [[ "${replace_credentials}" == "false" && "${replace_default_rules}" == "false" && "${replace_oidc_credentials}" == "false" && "${replace_oidc_issuer}" == "false" && "${replace_relying_party}" == "false" && "${generate_jwks}" == "false" && "${list_installed_modules}" == "false" ]]; then
+  echo "No action requested." >&2
+  usage
+  exit 1
+fi
+
+if [[ "${did_mutate}" == "true" ]]; then
+  echo "Restarting container ${idp_container} ..."
+  docker restart "${idp_container}" >/dev/null
+  echo "Restarted ${idp_container}"
+
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "Error: curl is required for post-restart OIDC validation" >&2
+    exit 1
+  fi
+
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "Error: python3 is required for post-restart OIDC validation" >&2
+    exit 1
+  fi
+
+  echo "Waiting ~5 seconds after restart..."
+  sleep 5
+
+  echo "Fetching OIDC discovery document..."
+  oidc_doc="$(curl -k -sS --resolve op1.dev.localhost:443:127.0.0.1 https://op1.dev.localhost/.well-known/openid-configuration)"
+
+  python3 - <<'PY' "${oidc_doc}"
+import json
+import sys
+
+body = sys.argv[1]
+
+try:
+    data = json.loads(body)
+except Exception as e:
+    raise SystemExit(f"OIDC discovery is not valid JSON: {e}")
+
+required = ["issuer", "authorization_endpoint", "token_endpoint", "jwks_uri"]
+missing = [k for k in required if k not in data]
+if missing:
+    raise SystemExit("OIDC discovery missing required fields: " + ", ".join(missing))
+
+print("OIDC discovery validation passed")
+print("issuer=", data.get("issuer"))
+PY
+fi
+
+

@@ -27,6 +27,9 @@ rp1.dev.localhost {
 }
 
 op1.dev.localhost {
+  @oidcDiscovery path /.well-known/openid-configuration
+  rewrite @oidcDiscovery /idp/profile/oidc/configuration
+
   reverse_proxy https://shibop1:443 {
     transport http {
       tls_insecure_skip_verify
