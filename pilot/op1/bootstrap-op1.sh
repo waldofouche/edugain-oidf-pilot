@@ -53,7 +53,7 @@ rm -f /tmp/op1-userfacing.key /tmp/op1-userfacing.crt
 
 # Configure password authn against local OpenLDAP service.
 cat > shibboleth-idp/conf/ldap.properties <<'EOF'
-idp.authn.LDAP.ldapURL = ldap://ldap:389
+idp.authn.LDAP.ldapURL = ldap://op1-ldap:389
 idp.authn.LDAP.useStartTLS = false
 idp.authn.LDAP.useSSL = false
 idp.authn.LDAP.baseDN = ou=people,dc=op1,dc=dev,dc=localhost

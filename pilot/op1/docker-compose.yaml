@@ -26,7 +26,9 @@ services:
       - ldap_data:/var/lib/ldap
       - ldap_config:/etc/ldap/slapd.d
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - op1-ldap
 
   ldap-ui:
     image: osixia/phpldapadmin:0.9.0
