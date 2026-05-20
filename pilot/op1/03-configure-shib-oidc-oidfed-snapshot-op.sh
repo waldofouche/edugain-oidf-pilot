@@ -744,4 +744,6 @@ print("attributes=", ", ".join(sorted(attributes)))
 PY
 fi
 
+## TODO: Configure OIDC FED plugin and register to one of the TAs
+
 
