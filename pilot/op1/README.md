@@ -9,7 +9,6 @@ This folder wires `https://github.com/iay/shibboleth-idp-docker` into the pilot 
 - Two seeded users from `ldap/bootstrap.ldif`:
   - `alice` / `alicepw`
   - `bob` / `bobpw`
-- Automatic one-shot LDAP seeding (`ldap-seed` service) on `docker compose up`
 
 ## Bootstrap once
 
@@ -34,12 +33,16 @@ docker compose up -d
 docker compose down
 ```
 
-Check seed status:
+Check status:
 
 ```bash
 docker compose ps
-docker compose logs ldap-seed
 ```
+
+Local logs are available at:
+
+- `logs/idp` for IdP logs (including `idp-process.log`)
+- `logs/jetty` for Jetty logs
 
 ## Access
 

@@ -6,6 +6,7 @@ services:
       - ldap
     volumes:
       - ./shibboleth-idp-docker/shibboleth-idp:/opt/shibboleth-idp
+      - ./logs/idp:/opt/shibboleth-idp/logs
       - ./logs/jetty:/opt/jetty-base/logs
     networks:
       - caddy
