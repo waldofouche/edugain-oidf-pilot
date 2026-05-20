@@ -6,6 +6,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 idp_container="${IDP_CONTAINER:-op1-shibop1-1}"
 credentials_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/credentials.xml"
 default_rules_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/attributes/default-rules.xml"
+attribute_resolver_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/attribute-resolver.xml"
+attribute_filter_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/attribute-filter.xml"
 oidc_credentials_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/oidc-credentials.xml"
 oidc_clientinfo_resolvers_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/oidc-clientinfo-resolvers.xml"
 oidc_properties_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/oidc.properties"
@@ -17,6 +19,8 @@ relying_party_file="${script_dir}/shibboleth-idp-docker/shibboleth-idp/conf/rely
 list_installed_modules="false"
 replace_credentials="true"
 replace_default_rules="true"
+replace_attribute_resolver="true"
+replace_attribute_filter="true"
 replace_oidc_credentials="true"
 replace_oidc_clientinfo_resolvers="true"
 replace_oidc_issuer="true"
@@ -26,20 +30,23 @@ generate_jwks="true"
 did_mutate="false"
 
 basic_rp_client_id="${BASIC_RP_CLIENT_ID:-sp1-oidc-client}"
-basic_rp_redirect_host="${BASIC_RP_REDIRECT_HOST:-sp1.dev.localhost}"
+basic_rp_redirect_host="${BASIC_RP_REDIRECT_HOST:-oidc-test.dev.localhost}"
 basic_rp_redirect_uri="${BASIC_RP_REDIRECT_URI:-https://${basic_rp_redirect_host}/oauth2/callback}"
 basic_rp_client_secret="${BASIC_RP_CLIENT_SECRET:-sp1-oidc-secret-change}"
 basic_rp_scope="${BASIC_RP_SCOPE:-openid profile email}"
+basic_rp_test_principal="${BASIC_RP_TEST_PRINCIPAL:-alice}"
 
 usage() {
   cat <<'EOF'
 Usage:
-  ./configure-shib-oidfed-snapshots [--list-installed-modules] [--no-replace-credentials] [--no-replace-default-rules] [--no-replace-oidc-credentials] [--no-replace-oidc-clientinfo-resolvers] [--no-replace-oidc-issuer] [--no-install-basic-rp] [--no-replace-relying-party] [--no-generate-jwks]
+  ./configure-shib-oidfed-snapshots [--list-installed-modules] [--no-replace-credentials] [--no-replace-default-rules] [--no-replace-attribute-resolver] [--no-replace-attribute-filter] [--no-replace-oidc-credentials] [--no-replace-oidc-clientinfo-resolvers] [--no-replace-oidc-issuer] [--no-install-basic-rp] [--no-replace-relying-party] [--no-generate-jwks]
 
 Flags:
   --list-installed-modules    List modules from the running IdP container
   --no-replace-credentials    Do not replace credentials.xml
   --no-replace-default-rules  Do not replace default-rules.xml
+  --no-replace-attribute-resolver Do not replace attribute-resolver.xml
+  --no-replace-attribute-filter Do not replace attribute-filter.xml
   --no-replace-oidc-credentials Do not replace oidc-credentials.xml
   --no-replace-oidc-clientinfo-resolvers Do not replace oidc-clientinfo-resolvers.xml
   --no-replace-oidc-issuer    Do not replace idp.oidc.issuer in oidc.properties
@@ -51,10 +58,11 @@ Flags:
 Optional env vars:
   IDP_CONTAINER=<container-name>      default: op1-shibop1-1
   BASIC_RP_CLIENT_ID=<client-id>      default: sp1-oidc-client
-  BASIC_RP_REDIRECT_HOST=<hostname>   default: sp1.dev.localhost
+  BASIC_RP_REDIRECT_HOST=<hostname>   default: oidc-test.dev.localhost
   BASIC_RP_REDIRECT_URI=<https-uri>   default: https://<BASIC_RP_REDIRECT_HOST>/oauth2/callback
   BASIC_RP_CLIENT_SECRET=<secret>     default: sp1-oidc-secret-change
   BASIC_RP_SCOPE=<scope>              default: openid profile email
+  BASIC_RP_TEST_PRINCIPAL=<principal> default: alice
 EOF
 }
 
@@ -72,6 +80,12 @@ for arg in "$@"; do
       ;;
     --no-replace-default-rules)
       replace_default_rules="false"
+      ;;
+    --no-replace-attribute-resolver)
+      replace_attribute_resolver="false"
+      ;;
+    --no-replace-attribute-filter)
+      replace_attribute_filter="false"
       ;;
     --no-replace-oidc-credentials)
       replace_oidc_credentials="false"
@@ -222,6 +236,101 @@ if [[ "${replace_default_rules}" == "true" ]]; then
 </beans>
 EOF_XML
   echo "Replaced ${default_rules_file}"
+  did_mutate="true"
+fi
+
+if [[ "${replace_attribute_resolver}" == "true" ]]; then
+  cat > "${attribute_resolver_file}" <<'EOF_XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<AttributeResolver
+        xmlns="urn:mace:shibboleth:2.0:resolver"
+        xmlns:oidc="urn:mace:shibboleth:2.0:resolver:oidc"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:mace:shibboleth:2.0:resolver http://shibboleth.net/schema/idp/shibboleth-attribute-resolver.xsd
+                            urn:mace:shibboleth:2.0:resolver:oidc http://shibboleth.net/schema/oidc/shibboleth-attribute-encoder-oidc.xsd">
+
+    <!-- ========================================== -->
+    <!--      Attribute Definitions                 -->
+    <!-- ========================================== -->
+
+    <AttributeDefinition id="eduPersonPrincipalName" xsi:type="Scoped" scope="%{idp.scope}">
+        <InputAttributeDefinition ref="uid" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="uid" xsi:type="PrincipalName" />
+
+    <AttributeDefinition id="subject" xsi:type="Scoped" scope="%{idp.scope}"
+            activationConditionRef="shibboleth.oidc.Conditions.SubjectRequired">
+        <InputDataConnector ref="computedSubjectId" attributeNames="subjectId" />
+        <AttributeEncoder xsi:type="oidc:OIDCScopedString" name="sub" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="mail" xsi:type="Template">
+        <InputAttributeDefinition ref="uid" />
+        <Template>
+          <![CDATA[
+               ${uid}@example.org
+          ]]>
+        </Template>
+    </AttributeDefinition>
+
+    <AttributeDefinition id="eduPersonScopedAffiliation" xsi:type="Scoped" scope="%{idp.scope}">
+        <InputDataConnector ref="staticAttributes" attributeNames="affiliation" />
+    </AttributeDefinition>
+
+    <!-- ========================================== -->
+    <!--      Data Connectors                       -->
+    <!-- ========================================== -->
+
+    <DataConnector id="staticAttributes" xsi:type="Static" exportAttributes="schacHomeOrganization">
+        <Attribute id="schacHomeOrganization">
+            <Value>%{idp.scope}</Value>
+        </Attribute>
+        <Attribute id="affiliation">
+            <Value>member</Value>
+        </Attribute>
+    </DataConnector>
+
+    <DataConnector id="computedSubjectId" xsi:type="ComputedId"
+            generatedAttributeID="subjectId"
+            salt="%{idp.oidc.subject.salt}"
+            algorithm="%{idp.oidc.subject.algorithm:SHA}"
+            encoding="BASE32">
+        <InputAttributeDefinition ref="%{idp.oidc.subject.sourceAttribute}" />
+    </DataConnector>
+
+</AttributeResolver>
+EOF_XML
+  echo "Replaced ${attribute_resolver_file}"
+  did_mutate="true"
+fi
+
+if [[ "${replace_attribute_filter}" == "true" ]]; then
+  cat > "${attribute_filter_file}" <<EOF_XML
+<?xml version="1.0" encoding="UTF-8"?>
+<AttributeFilterPolicyGroup id="ShibbolethFilterPolicy"
+        xmlns="urn:mace:shibboleth:2.0:afp"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:mace:shibboleth:2.0:afp http://shibboleth.net/schema/idp/shibboleth-afp.xsd">
+
+    <AttributeFilterPolicy id="alwaysRelease">
+        <PolicyRequirementRule xsi:type="ANY" />
+
+        <AttributeRule attributeID="schacHomeOrganization" permitAny="true" />
+    </AttributeFilterPolicy>
+
+    <AttributeFilterPolicy id="releaseToLocalOIDCRP">
+        <PolicyRequirementRule xsi:type="Requester" value="${basic_rp_client_id}" />
+
+        <AttributeRule attributeID="uid" permitAny="true" />
+        <AttributeRule attributeID="subject" permitAny="true" />
+        <AttributeRule attributeID="mail" permitAny="true" />
+        <AttributeRule attributeID="eduPersonPrincipalName" permitAny="true" />
+    </AttributeFilterPolicy>
+
+</AttributeFilterPolicyGroup>
+EOF_XML
+  echo "Replaced ${attribute_filter_file}"
   did_mutate="true"
 fi
 
@@ -406,7 +515,7 @@ if [[ "${install_basic_rp}" == "true" ]]; then
     "value": "openid"
   },
   "redirect_uri": {
-    "regexp": "^https://${basic_rp_redirect_host//./\\.}(/.*)?$"
+    "regexp": "^https://${basic_rp_redirect_host//./\\\\.}(/.*)?$"
   },
   "response_type": {
     "one_of": ["code"]
@@ -557,7 +666,7 @@ if [[ "${list_installed_modules}" == "true" ]]; then
   docker exec "${idp_container}" /bin/sh -c 'cd /opt/shibboleth-idp/bin && ./module.sh -l' 2>&1 | cat
 fi
 
-if [[ "${replace_credentials}" == "false" && "${replace_default_rules}" == "false" && "${replace_oidc_credentials}" == "false" && "${replace_oidc_clientinfo_resolvers}" == "false" && "${replace_oidc_issuer}" == "false" && "${install_basic_rp}" == "false" && "${replace_relying_party}" == "false" && "${generate_jwks}" == "false" && "${list_installed_modules}" == "false" ]]; then
+if [[ "${replace_credentials}" == "false" && "${replace_default_rules}" == "false" && "${replace_attribute_resolver}" == "false" && "${replace_attribute_filter}" == "false" && "${replace_oidc_credentials}" == "false" && "${replace_oidc_clientinfo_resolvers}" == "false" && "${replace_oidc_issuer}" == "false" && "${install_basic_rp}" == "false" && "${replace_relying_party}" == "false" && "${generate_jwks}" == "false" && "${list_installed_modules}" == "false" ]]; then
   echo "No action requested." >&2
   usage
   exit 1
@@ -602,6 +711,36 @@ if missing:
 
 print("OIDC discovery validation passed")
 print("issuer=", data.get("issuer"))
+PY
+
+  echo "Running attribute resolution test for ${basic_rp_test_principal} -> ${basic_rp_client_id}..."
+  attribute_doc="$(docker exec "${idp_container}" /opt/shibboleth-idp/bin/aacli.sh -n "${basic_rp_test_principal}" -r "${basic_rp_client_id}")"
+
+  python3 - <<'PY' "${attribute_doc}"
+import json
+import sys
+
+body = sys.argv[1]
+
+try:
+    data = json.loads(body)
+except Exception as e:
+    raise SystemExit(f"Attribute resolution output is not valid JSON: {e}")
+
+attributes = {
+    attr.get("name"): attr.get("values", [])
+    for attr in data.get("attributes", [])
+}
+
+required = ["uid", "subject", "mail", "eduPersonPrincipalName"]
+missing = [name for name in required if not attributes.get(name)]
+if missing:
+    raise SystemExit("Attribute resolution missing required attributes: " + ", ".join(missing))
+
+print("Attribute resolution validation passed")
+print("principal=", data.get("principal"))
+print("requester=", data.get("requester"))
+print("attributes=", ", ".join(sorted(attributes)))
 PY
 fi
 

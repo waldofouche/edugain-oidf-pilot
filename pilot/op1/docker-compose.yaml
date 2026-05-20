@@ -48,7 +48,7 @@ services:
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://op1.dev.localhost
       OAUTH2_PROXY_CLIENT_ID: sp1-oidc-client
       OAUTH2_PROXY_CLIENT_SECRET: sp1-oidc-secret-change
-      OAUTH2_PROXY_REDIRECT_URL: https://sp1.dev.localhost/oauth2/callback
+      OAUTH2_PROXY_REDIRECT_URL: https://oidc-test.dev.localhost/oauth2/callback
       OAUTH2_PROXY_SCOPE: openid profile email
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_UPSTREAMS: http://whoami:80
