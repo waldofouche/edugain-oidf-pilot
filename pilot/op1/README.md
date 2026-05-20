@@ -62,6 +62,39 @@ Local logs are available at:
 - `logs/idp` for IdP logs (including `idp-process.log`)
 - `logs/jetty` for Jetty logs
 
+## Test bilateral OIDC flow (`oidc-test.dev.localhost`)
+
+This verifies the static bilateral client between `oidc-test` (oauth2-proxy) and OP1 (`sp1-oidc-client`).
+
+1. Ensure OP1 stack is up:
+
+   ```bash
+   docker compose up -d
+   docker compose ps
+   ```
+
+2. Open a private/incognito browser window and go to:
+   - `https://oidc-test.dev.localhost`
+
+3. Expected redirect chain:
+   - `oidc-test.dev.localhost` -> `op1.dev.localhost` login page -> back to `oidc-test.dev.localhost/oauth2/callback`
+
+4. Log in with a seeded LDAP account:
+   - `alice` / `alicepw` (or `bob` / `bobpw`)
+
+5. Success criteria:
+   - You land on the upstream whoami page (proxied by oauth2-proxy), not an error page.
+   - Refreshing `https://oidc-test.dev.localhost` keeps you signed in via oauth2-proxy session cookie.
+
+If login fails, check:
+
+```bash
+docker compose logs --tail=200 shibop1
+docker compose logs --tail=200 oidc-test
+```
+
+Common local issue: stale cookies from earlier runs. Retry in a fresh private window.
+
 ## Access
 
 Use the existing Caddy route:
