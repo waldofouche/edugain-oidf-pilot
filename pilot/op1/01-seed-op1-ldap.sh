@@ -10,7 +10,7 @@ fresh="false"
 usage() {
   cat <<'EOF'
 Usage:
-  ./seed-ldap.sh [--fresh]
+  ./01-seed-op1-ldap.sh [--fresh]
 
 Flags:
   --fresh   Remove existing LDAP people/groups subtrees before seeding

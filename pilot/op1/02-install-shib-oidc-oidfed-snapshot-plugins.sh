@@ -61,7 +61,7 @@ resolve_latest_tarball() {
 usage() {
   cat <<'EOF'
 Usage:
-  ./install-experimental-federation-plugins
+  ./02-install-shib-oidc-op-snapshot.sh
 
 Optional:
   IDP_CONTAINER=<container-name>   (default: op1-shibop1-1)

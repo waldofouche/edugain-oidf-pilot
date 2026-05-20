@@ -10,15 +10,27 @@ This folder wires `https://github.com/iay/shibboleth-idp-docker` into the pilot 
   - `alice` / `alicepw`
   - `bob` / `bobpw`
 
-## Bootstrap once
+## Setup order
 
 Run from `pilot/op1`:
 
 ```bash
-./bootstrap-op1.sh
+./install-all.sh
 ```
 
-This script will:
+`install-all.sh` always runs LDAP seeding in fresh mode (`01-seed-op1-ldap.sh --fresh`).
+
+Equivalent manual sequence:
+
+```bash
+./00-bootstrap-op1.sh
+docker compose up -d
+./01-seed-op1-ldap.sh
+./02-install-shib-oidc-oidfed-snapshot-plugins.sh
+./03-configure-shib-oidc-oidfed-snapshot-op.sh
+```
+
+The bootstrap script will:
 - clone the upstream repository into `op1/shibboleth-idp-docker`
 - fetch Jetty and Shibboleth distributions
 - install IdP config for `op1.dev.localhost`
@@ -36,7 +48,7 @@ docker compose down
 Seed LDAP users manually:
 
 ```bash
-./seed-ldap.sh
+./01-seed-op1-ldap.sh
 ```
 
 Check status:

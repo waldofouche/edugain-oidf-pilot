@@ -39,7 +39,7 @@ basic_rp_test_principal="${BASIC_RP_TEST_PRINCIPAL:-alice}"
 usage() {
   cat <<'EOF'
 Usage:
-  ./configure-shib-oidfed-snapshots [--list-installed-modules] [--no-replace-credentials] [--no-replace-default-rules] [--no-replace-attribute-resolver] [--no-replace-attribute-filter] [--no-replace-oidc-credentials] [--no-replace-oidc-clientinfo-resolvers] [--no-replace-oidc-issuer] [--no-install-basic-rp] [--no-replace-relying-party] [--no-generate-jwks]
+  ./03-configure-shib-oidc-op-snapshot.sh [--list-installed-modules] [--no-replace-credentials] [--no-replace-default-rules] [--no-replace-attribute-resolver] [--no-replace-attribute-filter] [--no-replace-oidc-credentials] [--no-replace-oidc-clientinfo-resolvers] [--no-replace-oidc-issuer] [--no-install-basic-rp] [--no-replace-relying-party] [--no-generate-jwks]
 
 Flags:
   --list-installed-modules    List modules from the running IdP container
