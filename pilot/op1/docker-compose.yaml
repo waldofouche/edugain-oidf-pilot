@@ -1,16 +1,4 @@
 services:
-  shibop1:
-    image: shibboleth-idp:12.1.9
-    restart: unless-stopped
-    depends_on:
-      - ldap
-    volumes:
-      - ./shibboleth-idp-docker/shibboleth-idp:/opt/shibboleth-idp
-      - ./logs/idp:/opt/shibboleth-idp/logs
-      - ./logs/jetty:/opt/jetty-base/logs
-    networks:
-      - caddy
-
   ldap:
     image: osixia/openldap:1.5.0
     restart: unless-stopped
@@ -18,13 +6,10 @@ services:
       LDAP_ORGANISATION: "eduGAIN OIDF Pilot"
       LDAP_DOMAIN: "op1.dev.localhost"
       LDAP_ADMIN_PASSWORD: "adminpw"
-      LDAP_CONFIG_PASSWORD: "configpw"
       LDAP_TLS: "false"
-      LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
+    command: --copy-service
     volumes:
-      - ./ldap/bootstrap.ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom/50-bootstrap.ldif
-      - ldap_data:/var/lib/ldap
-      - ldap_config:/etc/ldap/slapd.d
+      - ./ldap/bootstrap.ldif:/container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif:ro
     networks:
       caddy:
         aliases:
@@ -36,8 +21,20 @@ services:
     depends_on:
       - ldap
     environment:
-      PHPLDAPADMIN_LDAP_HOSTS: ldap
+      PHPLDAPADMIN_LDAP_HOSTS: op1-ldap
       PHPLDAPADMIN_HTTPS: "false"
+    networks:
+      - caddy
+
+  shibop1:
+    image: shibboleth-idp:12.1.9
+    restart: unless-stopped
+    depends_on:
+      - ldap
+    volumes:
+      - ./shibboleth-idp-docker/shibboleth-idp:/opt/shibboleth-idp
+      - ./logs/idp:/opt/shibboleth-idp/logs
+      - ./logs/jetty:/opt/jetty-base/logs
     networks:
       - caddy
 
@@ -68,7 +65,3 @@ networks:
   caddy:
     external: true
     name: caddy-network
-
-volumes:
-  ldap_data:
-  ldap_config:
