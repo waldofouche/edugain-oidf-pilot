@@ -27,7 +27,11 @@ rp1.dev.localhost {
 }
 
 op1.dev.localhost {
-  reverse_proxy shibop1:8080
+  reverse_proxy https://shibop1:443 {
+    transport http {
+      tls_insecure_skip_verify
+    }
+  }
 }
 
 op2.dev.localhost {

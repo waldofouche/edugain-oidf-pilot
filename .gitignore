@@ -51,3 +51,9 @@ shibop1
 #exclude caddy generated config and data
 **/caddy/config
 **/caddy/data
+
+# OP1 local runtime/build artifacts
+/pilot/op1/logs/
+/pilot/op1/ldap/data/
+/pilot/op1/ldap/config/
+/pilot/op1/shibboleth-idp-docker/
