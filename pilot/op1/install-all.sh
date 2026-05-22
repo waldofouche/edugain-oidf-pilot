@@ -10,9 +10,10 @@ Usage:
   ./install-all.sh
 
 Runs OP1 setup in this order:
-  1) docker compose build shibop1
-  2) docker compose up -d
-  3) 01-seed-op1-ldap.sh
+  1) 00-bootstrap-op1.sh
+  2) docker compose build shibop1
+  3) docker compose up -d
+  4) 01-seed-op1-ldap.sh
 
 Flags:
   --help, -h    Show this help
@@ -45,6 +46,7 @@ run_step() {
   "$@"
 }
 
+run_step "Preparing upstream Shibboleth/Jetty inputs" "${script_dir}/00-bootstrap-op1.sh"
 run_step "Building OP1 IdP image" docker compose -f "${script_dir}/docker-compose.yaml" build shibop1
 run_step "Starting OP1 containers" docker compose -f "${script_dir}/docker-compose.yaml" up -d
 

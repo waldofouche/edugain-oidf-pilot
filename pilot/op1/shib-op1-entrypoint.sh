@@ -15,88 +15,39 @@ if [[ -z "${IDP_SCOPE:-}" ]]; then
 fi
 IDP_SCOPE="$(printf '%s' "${IDP_SCOPE}" | tr '[:upper:]' '[:lower:]')"
 
+validate_dns_name() {
+  local value="$1"
+  local name="$2"
+  local label
+
+  if [[ -z "${value}" ]]; then
+    echo "Error: ${name} must not be empty" >&2
+    exit 1
+  fi
+  if [[ "${value}" == *://* || "${value}" == */* || "${value}" == *:* || ${#value} -gt 253 ]]; then
+    echo "Error: ${name} must be a DNS host name, not a URL or host:port value" >&2
+    exit 1
+  fi
+
+  IFS='.' read -ra labels <<<"${value}"
+  for label in "${labels[@]}"; do
+    if [[ ! "${label}" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]]; then
+      echo "Error: ${name} contains an invalid DNS label" >&2
+      exit 1
+    fi
+  done
+}
+
+validate_dns_name "${IDP_HOST}" IDP_HOST
+validate_dns_name "${IDP_SCOPE}" IDP_SCOPE
+
+issuer="https://${IDP_HOST}"
+entity_id="${issuer}/idp/shibboleth"
+
 export IDP_HOME IDP_HOST IDP_SCOPE
+export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Didp.entityID=${entity_id} -Didp.scope=${IDP_SCOPE} -Didp.oidc.issuer=${issuer}"
 
-python3 - <<'PY'
-import json
-import os
-import pathlib
-import re
-
-
-HOST_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
-
-
-def validate_dns_name(value: str, name: str) -> str:
-    if not value:
-        raise SystemExit(f"{name} must not be empty")
-    if "://" in value or "/" in value or ":" in value:
-        raise SystemExit(f"{name} must be a DNS host name, not a URL or host:port value")
-    if len(value) > 253:
-        raise SystemExit(f"{name} must be 253 characters or fewer")
-    labels = value.split(".")
-    if any(not HOST_RE.match(label) for label in labels):
-        raise SystemExit(
-            f"{name} contains an invalid DNS label; use letters, digits and hyphens only"
-        )
-    return value
-
-
-def replace_property(path: pathlib.Path, key: str, value: str) -> None:
-    text = path.read_text()
-    pattern = re.compile(rf"^\s*{re.escape(key)}\s*=\s*.*$", re.MULTILINE)
-    replacement = f"{key}={value}"
-    text, count = pattern.subn(replacement, text, count=1)
-    if count == 0:
-        raise SystemExit(f"Could not find {key} in {path}")
-    path.write_text(text)
-
-
-idp_home = pathlib.Path(os.environ["IDP_HOME"])
-idp_host = validate_dns_name(os.environ["IDP_HOST"], "IDP_HOST")
-idp_scope = validate_dns_name(os.environ["IDP_SCOPE"], "IDP_SCOPE")
-issuer = f"https://{idp_host}"
-entity_id = f"{issuer}/idp/shibboleth"
-
-replace_property(idp_home / "conf/idp.properties", "idp.entityID", entity_id)
-replace_property(idp_home / "conf/idp.properties", "idp.scope", idp_scope)
-replace_property(idp_home / "conf/oidc.properties", "idp.oidc.issuer", issuer)
-
-discovery_file = idp_home / "static/openid-configuration.json"
-if discovery_file.exists():
-    discovery = json.loads(discovery_file.read_text())
-    endpoint_paths = {
-        "authorization_endpoint": "/idp/profile/oidc/authorize",
-        "registration_endpoint": "/idp/profile/oidc/register",
-        "token_endpoint": "/idp/profile/oidc/token",
-        "userinfo_endpoint": "/idp/profile/oidc/userinfo",
-        "introspection_endpoint": "/idp/profile/oauth2/introspection",
-        "revocation_endpoint": "/idp/profile/oauth2/revocation",
-        "jwks_uri": "/idp/profile/oidc/keyset",
-        "end_session_endpoint": "/idp/profile/oidc/end-session",
-        "pushed_authorization_request_endpoint": "/idp/profile/oauth2/pushed-authorization",
-    }
-    discovery["issuer"] = issuer
-    for key, path in endpoint_paths.items():
-        if key in discovery:
-            discovery[key] = f"{issuer}{path}"
-    discovery_file.write_text(json.dumps(discovery, indent=3) + "\n")
-
-metadata_file = idp_home / "metadata/idp-metadata.xml"
-if metadata_file.exists():
-    metadata = metadata_file.read_text()
-    metadata = re.sub(
-        r'entityID="https://[^"]+/idp/shibboleth"',
-        f'entityID="{entity_id}"',
-        metadata,
-        count=1,
-    )
-    metadata = re.sub(r"https://[^\s\"<>]+/idp/", f"{issuer}/idp/", metadata)
-    metadata = re.sub(r"at [A-Za-z0-9.-]+", f"at {idp_host}", metadata)
-    metadata_file.write_text(metadata)
-
-print(f"Configured Shibboleth IdP host={idp_host} scope={idp_scope}")
-PY
+echo "Configured Shibboleth IdP host=${IDP_HOST} scope=${IDP_SCOPE}"
 
 credentials_dir="${IDP_HOME}/credentials"
 mkdir -p "${credentials_dir}"

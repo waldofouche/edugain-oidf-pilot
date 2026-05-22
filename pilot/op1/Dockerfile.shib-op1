@@ -14,16 +14,103 @@ RUN apk add --no-cache bash curl openssl python3
 
 ARG JETTY_BASE_VERSION=12.1
 ARG JETTY_VERSION=12.1.9
+ARG OP1_IDP_HOST=op1.dev.localhost
 
 COPY shibboleth-idp-docker/jetty-base-${JETTY_BASE_VERSION} ${JETTY_BASE}
 COPY shibboleth-idp-docker/jetty-dist-${JETTY_VERSION}/dist ${JETTY_HOME}
-ADD shibboleth-idp-docker/overlay/jetty-base-${JETTY_BASE_VERSION}.tar ${JETTY_BASE}
+COPY shibboleth-idp-docker/overlay/jetty-base-${JETTY_BASE_VERSION}/ ${JETTY_BASE}/
 
 COPY shibboleth-idp-docker/shibboleth-idp ${IDP_HOME}
 COPY shib-op1-entrypoint.sh /usr/local/bin/shib-op1-entrypoint.sh
 
 RUN chmod 0755 /usr/local/bin/shib-op1-entrypoint.sh \
     && mkdir -p "${JETTY_LOGS}" "${IDP_HOME}/logs"
+
+RUN /bin/bash <<'EOF'
+set -euo pipefail
+
+snapshot_keys_file="/tmp/SHIBBOLETH_SNAPSHOT_PGP_KEYS"
+curl -fsSL --connect-timeout 10 --max-time 120 --retry 2 --retry-delay 2 \
+  "https://shibboleth.net/downloads/SHIBBOLETH_SNAPSHOT_PGP_KEYS" \
+  -o "${snapshot_keys_file}"
+
+url_join() {
+  local base="$1"
+  local file="$2"
+  if [[ "${file}" =~ ^https?:// ]]; then
+    printf '%s\n' "${file}"
+  elif [[ "${base}" == */ ]]; then
+    printf '%s\n' "${base}${file}"
+  else
+    printf '%s\n' "${base}/${file}"
+  fi
+}
+
+resolve_latest_tarball() {
+  local base_url="$1"
+  local latest
+  latest="$(curl -fsSL --connect-timeout 10 --max-time 120 --retry 2 --retry-delay 2 "${base_url}" \
+    | grep -Eo 'href="[^"]+\.tar\.gz"' \
+    | sed -E 's/^href="(.*)"$/\1/' \
+    | grep -vE '\.(asc|sha1|sha256)\.tar\.gz$' \
+    | sort \
+    | tail -n 1)"
+  if [[ -z "${latest}" ]]; then
+    echo "Error: failed to resolve snapshot tarball from ${base_url}" >&2
+    exit 1
+  fi
+  latest="${latest/http:\/\//https://}"
+  url_join "${base_url}" "${latest}"
+}
+
+install_plugin() {
+  local plugin_id="$1"
+  local base_url="$2"
+  local url
+  if [[ -d "${IDP_HOME}/dist/plugin-contents/${plugin_id}" ]]; then
+    echo "Plugin ${plugin_id} already present; skipping"
+    return
+  fi
+  url="$(resolve_latest_tarball "${base_url}")"
+  echo "Installing ${plugin_id} from ${url}"
+  "${IDP_HOME}/bin/plugin.sh" --noCheck --truststore "${snapshot_keys_file}" -i "${url}" --noPrompt
+}
+
+install_plugin net.shibboleth.oidc.common \
+  https://build.shibboleth.net/maven/snapshots/net/shibboleth/oidc/oidc-common-dist/3.4.0-SNAPSHOT/
+install_plugin net.shibboleth.idp.plugin.oidc.config \
+  https://build.shibboleth.net/maven/snapshots/net/shibboleth/idp/plugin/config/oidc/idp-plugin-oidc-config-dist/3.1.0-SNAPSHOT/
+install_plugin net.shibboleth.idp.plugin.oidc.op \
+  https://build.shibboleth.net/maven/snapshots/net/shibboleth/idp/plugin/oidc/idp-plugin-oidc-op-distribution/4.4.0-SNAPSHOT/
+install_plugin net.shibboleth.idp.plugin.oidc.op.oidfed \
+  https://build.shibboleth.net/nexus-proxy/content/repositories/snapshots/net/shibboleth/idp/plugin/oidfed/idp-plugin-oidfed-op-dist/1.0.0-SNAPSHOT/
+
+rm -f "${snapshot_keys_file}"
+EOF
+
+RUN /bin/bash <<EOF
+set -euo pipefail
+cd "${IDP_HOME}"
+mkdir -p credentials
+bin/jwtgen.sh -t RSA -s 2048 -u sig -i defaultRSASign | tail -n +2 > credentials/idp-signing-rs.jwk
+bin/jwtgen.sh -t EC -c P-256 -u sig -i defaultECSign | tail -n +2 > credentials/idp-signing-es.jwk
+bin/jwtgen.sh -t RSA -s 2048 -u enc -i defaultRSAEnc | tail -n +2 > credentials/idp-encryption-rsa.jwk
+bin/jwtgen.sh -t EC -c P-384 -u sig -i defaultEC384Sign | tail -n +2 > credentials/idp-signing-es384.jwk
+bin/jwtgen.sh -t EC -c P-521 -u sig -i defaultEC512Sign | tail -n +2 > credentials/idp-signing-es512.jwk
+
+tmp_dir="\$(mktemp -d)"
+trap 'rm -rf "\${tmp_dir}"' EXIT
+openssl req -quiet -new -newkey rsa:4096 -days 365 -nodes -x509 \
+  -keyout "\${tmp_dir}/idp-userfacing.key" \
+  -out "\${tmp_dir}/idp-userfacing.crt" \
+  -subj "/C=AA/ST=state/L=locality/O=eduGAIN/OU=OIDF Pilot/CN=${OP1_IDP_HOST}/emailAddress=support@${OP1_IDP_HOST}"
+openssl pkcs12 -export \
+  -out credentials/idp-userfacing.p12 \
+  -inkey "\${tmp_dir}/idp-userfacing.key" \
+  -in "\${tmp_dir}/idp-userfacing.crt" \
+  -passout pass:changeit
+printf '%s\n' "${OP1_IDP_HOST}" > credentials/.idp-userfacing.host
+EOF
 
 EXPOSE 80 443 8443
 VOLUME ["/opt/jetty-base/logs", "/opt/shibboleth-idp/logs"]

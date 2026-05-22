@@ -6,6 +6,7 @@ This folder wires `https://github.com/iay/shibboleth-idp-docker` into the pilot 
 
 - Upstream Shibboleth IdP from `iay/shibboleth-idp-docker`, baked into `edugain-pilot/shib-op1:latest` by `Dockerfile.shib-op1`
 - Local OpenLDAP (`osixia/openldap`) as the simplest local user datastore
+- OP1 Shibboleth configuration mounted from `config/shibboleth-idp`
 - Runtime hostname configuration through `IDP_HOST` and `IDP_SCOPE`
 - Two seeded users from `ldap/bootstrap.ldif`:
   - `alice` / `alicepw`
@@ -19,35 +20,39 @@ Run from `pilot/op1`:
 ./install-all.sh
 ```
 
-`install-all.sh` builds the OP1 image, starts the stack, and always runs LDAP seeding in fresh mode (`01-seed-op1-ldap.sh --fresh`).
+`install-all.sh` prepares the upstream Shibboleth/Jetty input tree, builds the OP1 image, starts the stack, and always runs LDAP seeding in fresh mode (`01-seed-op1-ldap.sh --fresh`).
 
 Equivalent manual sequence:
 
 ```bash
+./00-bootstrap-op1.sh
 docker compose build shibop1
 docker compose up -d
 ./01-seed-op1-ldap.sh --fresh
 ```
 
+The bootstrap script is intentionally small. It only clones/repairs `shibboleth-idp-docker`, fetches Jetty/Shibboleth, and runs the upstream installer.
+
 The OP1 Dockerfile will:
 - package Jetty and the prepared Shibboleth IdP home into `edugain-pilot/shib-op1:latest`
-- configure IdP password authn to use local LDAP
+- install OIDC/OIDFed snapshot plugins during image build
+- generate local OIDC JWKs and the default browser-facing Jetty credential
 - start with `op1.dev.localhost` by default
-- rewrite hostname-derived IdP/OIDC/SAML metadata at container startup from `IDP_HOST`
-- regenerate the local self-signed browser-facing credential when `IDP_HOST` changes
+- take OP1-specific Shibboleth config from read-only compose mounts under `config/shibboleth-idp`
+- pass hostname-derived IdP/OIDC properties at container startup from `IDP_HOST`
+- regenerate the local self-signed browser-facing credential if `IDP_HOST` changes
 
-The old `00` to `03` scripts are retained for rebuilding or refreshing the prepared `shibboleth-idp-docker/shibboleth-idp` tree, but the normal run path no longer mutates a running container.
+Scripts `02` and `03` are no longer part of the normal setup path. Plugin installation is folded into `Dockerfile.shib-op1`, and the OP configuration files that script `03` used to write are mounted from `config/shibboleth-idp`.
 
 ## Changing the OP host
 
-Set the same `IDP_HOST` when starting Caddy and OP1. `IDP_SCOPE` defaults to `dev.localhost`; override it only if scoped attributes should use a different suffix.
+Set `IDP_HOST` when starting OP1. `IDP_SCOPE` defaults to `dev.localhost`; override it only if scoped attributes should use a different suffix.
 
 ```bash
-IDP_HOST=op1-alt.dev.localhost docker compose -f ../caddy/docker-compose.yaml up -d
 IDP_HOST=op1-alt.dev.localhost docker compose up -d --build
 ```
 
-The IdP expects a DNS host name only, not a URL or `host:port` value.
+The IdP expects a DNS host name only, not a URL or `host:port` value. The pilot Caddyfile is still outside this folder and must have a matching route for any non-default host.
 
 ## Start/stop
 
