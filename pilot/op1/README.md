@@ -4,15 +4,18 @@ This folder wires `https://github.com/iay/shibboleth-idp-docker` into the pilot 
 
 ## What this setup uses
 
-- Upstream Shibboleth IdP from `iay/shibboleth-idp-docker`, baked into `edugain-pilot/shib-op1:latest` by `Dockerfile.shib-op1`
-- Local OpenLDAP (`osixia/openldap`) as the simplest local user datastore
-- OP1 Shibboleth configuration mounted from `config/shibboleth-idp`
-- Runtime hostname configuration through `IDP_HOST` and `IDP_SCOPE`
-- Two seeded users from `ldap/bootstrap.ldif`:
+- Upstream Shibboleth IdP from `iay/shibboleth-idp-docker`
+- `Dockerfile.shib-op1`, which builds the local `edugain-pilot/shib-op1:latest` image
+- Local OpenLDAP (`osixia/openldap`) as the user datastore
+- OP1 Shibboleth configuration mounted read-only from `config/shibboleth-idp`
+- Runtime IdP hostname/scope configuration through `IDP_HOST` and `IDP_SCOPE`
+- Seed users from `ldap/bootstrap.ldif`:
   - `alice` / `alicepw`
   - `bob` / `bobpw`
 
-## Setup order
+OIDC/OIDFed plugins and local signing/encryption material are built into the OP1 image.
+
+## Setup
 
 Run from `pilot/op1`:
 
@@ -20,7 +23,12 @@ Run from `pilot/op1`:
 ./install-all.sh
 ```
 
-`install-all.sh` prepares the upstream Shibboleth/Jetty input tree, builds the OP1 image, starts the stack, and always runs LDAP seeding in fresh mode (`01-seed-op1-ldap.sh --fresh`).
+This performs the complete local setup:
+
+1. Prepare the upstream Shibboleth/Jetty input tree in `shibboleth-idp-docker`.
+2. Build `edugain-pilot/shib-op1:latest`.
+3. Start the OP1 stack.
+4. Reseed LDAP with the demo users.
 
 Equivalent manual sequence:
 
@@ -31,18 +39,29 @@ docker compose up -d
 ./01-seed-op1-ldap.sh --fresh
 ```
 
-The bootstrap script is intentionally small. It only clones/repairs `shibboleth-idp-docker`, fetches Jetty/Shibboleth, and runs the upstream installer.
+`00-bootstrap-op1.sh` is intentionally small: it only clones/repairs `shibboleth-idp-docker`, fetches Jetty/Shibboleth, and runs the upstream installer. OP1-specific configuration lives outside that vendored tree.
 
-The OP1 Dockerfile will:
-- package Jetty and the prepared Shibboleth IdP home into `edugain-pilot/shib-op1:latest`
-- install OIDC/OIDFed snapshot plugins during image build
-- generate local OIDC JWKs and the default browser-facing Jetty credential
-- start with `op1.dev.localhost` by default
-- take OP1-specific Shibboleth config from read-only compose mounts under `config/shibboleth-idp`
-- pass hostname-derived IdP/OIDC properties at container startup from `IDP_HOST`
-- regenerate the local self-signed browser-facing credential if `IDP_HOST` changes
+## Start, stop, and logs
 
-## Changing the OP host
+```bash
+docker compose up -d
+docker compose ps
+docker compose logs --tail=200 shibop1
+docker compose down
+```
+
+Seed LDAP users again if needed:
+
+```bash
+./01-seed-op1-ldap.sh --fresh
+```
+
+Local logs are written to:
+
+- `logs/idp` for IdP logs, including `idp-process.log`
+- `logs/jetty` for Jetty logs
+
+## Hostname
 
 Set `IDP_HOST` when starting OP1. `IDP_SCOPE` defaults to `dev.localhost`; override it only if scoped attributes should use a different suffix.
 
@@ -51,30 +70,6 @@ IDP_HOST=op1-alt.dev.localhost docker compose up -d --build
 ```
 
 The IdP expects a DNS host name only, not a URL or `host:port` value. The pilot Caddyfile is still outside this folder and must have a matching route for any non-default host.
-
-## Start/stop
-
-```bash
-docker compose up -d
-docker compose down
-```
-
-Seed LDAP users manually:
-
-```bash
-./01-seed-op1-ldap.sh
-```
-
-Check status:
-
-```bash
-docker compose ps
-```
-
-Local logs are available at:
-
-- `logs/idp` for IdP logs (including `idp-process.log`)
-- `logs/jetty` for Jetty logs
 
 ## Test bilateral OIDC flow (`oidc-test.dev.localhost`)
 
@@ -111,10 +106,13 @@ Common local issue: stale cookies from earlier runs. Retry in a fresh private wi
 
 ## Access
 
-Use the existing Caddy route:
-- `https://op1.dev.localhost` by default, or `https://$IDP_HOST` when overridden
+IdP via Caddy:
+
+- `https://op1.dev.localhost` by default
+- `https://$IDP_HOST` when overridden, if Caddy has a matching route
 
 LDAP admin UI:
+
 - `https://ldap-ui.dev.localhost`
 - Login DN: `cn=admin,dc=op1,dc=dev,dc=localhost`
 - Password: `adminpw`
