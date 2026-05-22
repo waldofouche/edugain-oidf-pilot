@@ -42,8 +42,6 @@ The OP1 Dockerfile will:
 - pass hostname-derived IdP/OIDC properties at container startup from `IDP_HOST`
 - regenerate the local self-signed browser-facing credential if `IDP_HOST` changes
 
-The old post-start plugin/configuration scripts have been removed. Plugin installation is folded into `Dockerfile.shib-op1`, and OP configuration is mounted from `config/shibboleth-idp`.
-
 ## Changing the OP host
 
 Set `IDP_HOST` when starting OP1. `IDP_SCOPE` defaults to `dev.localhost`; override it only if scoped attributes should use a different suffix.
