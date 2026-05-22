@@ -8,13 +8,13 @@ This folder wires `https://github.com/iay/shibboleth-idp-docker` into the pilot 
 - `Dockerfile.shib-op1`, which builds the local `edugain-pilot/shib-op1:latest` image
 - Local OpenLDAP (`osixia/openldap`) as the user datastore
 - OP1 Shibboleth configuration mounted read-only from `config/shibboleth-idp`
-- A local bilateral SAML SP test service in `../sp1`
+- SAML SP metadata loaded from the local MDQ service in `../mdq`
 - Runtime IdP hostname/scope configuration through `IDP_HOST` and `IDP_SCOPE`
 - Seed users from `ldap/bootstrap.ldif`:
   - `alice` / `alicepw`
   - `bob` / `bobpw`
 
-OIDC/OIDFed plugins and local signing/encryption material are built into the OP1 image. The SAML SP is registered directly with OP1 via static metadata, so no CDS is needed for the local SAML test.
+OIDC/OIDFed plugins and local signing/encryption material are built into the OP1 image. SAML metadata is resolved from the local MDQ service.
 
 ## Setup
 
@@ -105,12 +105,16 @@ docker compose logs --tail=200 oidc-test
 
 Common local issue: stale cookies from earlier runs. Retry in a fresh private window.
 
-## Test bilateral SAML flow (`sp1.dev.localhost`)
+## Test SAML flow (`sp1.dev.localhost`)
 
-This verifies a direct SAML SP registration against OP1 without a CDS.
+This verifies SP1 against OP1 using MDQ for metadata and DS for IdP discovery.
 
-1. Ensure OP1, SP1, and Caddy are running.
+1. Ensure MDQ, DS, OP1, SP1, and Caddy are running.
    ```bash
+   cd ../mdq
+   docker compose up -d --build
+   cd ../ds
+   docker compose up -d --build
    cd ../sp1
    docker compose up -d --build
    cd ../op1
@@ -118,10 +122,10 @@ This verifies a direct SAML SP registration against OP1 without a CDS.
 2. Open a private/incognito browser window and go to:
    - `https://sp1.dev.localhost`
 3. Expected redirect chain:
-   - `sp1.dev.localhost` -> `op1.dev.localhost` login page -> back to `sp1.dev.localhost/mellon/postResponse`
+   - `sp1.dev.localhost` -> `ds.dev.localhost` -> `op1.dev.localhost` login page -> back to `sp1.dev.localhost/mellon/postResponse`
 4. Log in with `alice` / `alicepw` or `bob` / `bobpw`.
 
-The SP is an Apache/mod_auth_mellon container. Its SP metadata and local keypair live in `../sp1/mellon`; OP1 loads that metadata as a bilateral from the same mounted file.
+The SP is an Apache/mod_auth_mellon container. SP and IdP metadata live in `../mdq/metadata`; SP1 keeps only its local Mellon keypair in `../sp1/mellon`.
 
 ## Access
 

@@ -8,6 +8,8 @@ required_hosts=(
   ia2.dev.localhost
   rp1.dev.localhost
   op1.dev.localhost
+  mdq.dev.localhost
+  ds.dev.localhost
   sp1.dev.localhost
   whoami.dev.localhost
 )
@@ -77,7 +79,7 @@ check_attribute_resolution() {
 
   output="$(docker exec op1-shibop1-1 /opt/shibboleth-idp/bin/aacli.sh \
     -n alice \
-    -r https://sp1.dev.localhost/saml/metadata \
+    -r https://sp1.dev.localhost/mellon \
     --saml2 2>/dev/null || true)"
 
   if [[ -z "${output}" ]]; then

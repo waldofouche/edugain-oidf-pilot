@@ -30,6 +30,14 @@ oidc-test.dev.localhost {
   reverse_proxy oidc-test:4180
 }
 
+mdq.dev.localhost {
+  reverse_proxy mdq:8080
+}
+
+ds.dev.localhost {
+  reverse_proxy ds:8080
+}
+
 sp1.dev.localhost {
   reverse_proxy sp1:80
 }

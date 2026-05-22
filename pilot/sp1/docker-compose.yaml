@@ -7,7 +7,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./apache/saml-sp.conf:/etc/apache2/sites-enabled/000-default.conf:ro
-      - ./mellon:/etc/apache2/mellon:ro
+      - ./mellon/sp.key:/etc/apache2/mellon/sp.key:ro
+      - ./mellon/sp.crt:/etc/apache2/mellon/sp.crt:ro
+      - ../mdq/metadata/op1.xml:/etc/apache2/mellon/idp.xml:ro
+      - ../mdq/metadata/sp1.xml:/etc/apache2/mellon/mdq-sp1.xml:ro
       - ./www/index.html:/var/www/html/index.html:ro
       - ./www/cgi-bin/env.cgi:/usr/lib/cgi-bin/env.cgi:ro
     networks:

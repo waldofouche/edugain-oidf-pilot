@@ -7,8 +7,10 @@
                         urn:oasis:names:tc:SAML:2.0:metadata http://docs.oasis-open.org/security/saml/v2.0/saml-schema-metadata-2.0.xsd"
     sortKey="1">
 
-    <MetadataProvider id="LocalSAMLSP" xsi:type="FilesystemMetadataProvider"
-        metadataFile="%{idp.home}/metadata/saml-sp.xml">
+    <MetadataProvider id="MDQ_SP1" xsi:type="FileBackedHTTPMetadataProvider"
+        backingFile="%{idp.home}/metadata/mdq-sp1.xml"
+        metadataURL="http://mdq:8080/entities/https%3A%2F%2Fsp1.dev.localhost%2Fmellon"
+        failFastInitialization="false">
         <MetadataFilter xsi:type="EntityRole">
             <RetainedRole>md:SPSSODescriptor</RetainedRole>
         </MetadataFilter>

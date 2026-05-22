@@ -19,11 +19,16 @@ For more information about eduGAIN please visit:
 
 ## Pilot environment
 
-The pilot environment consists of the following elements:
-- https://ta.dev.localhost: the eduGAIN OpenID Federation Pilot Trust Anchor, based on the LightHouse OIDFed Trust Anchor (https://go-oidfed.github.io/lighthouse/).
-- https://ia1.dev.localhost: Intermediate Authority 1, which is an entity controlled by the pilot team that acts as a mock federation. It's a subordinate of the eduGAIN-TA based on the LightHouse OIDFed Trust Anchor.
-- https://ia2.dev.localhost: Intermediate Authority 2, which is an entity controlled by the pilot team that acts as a mock federation. It's a subordinate of the eduGAIN-TA based on the LightHouse OIDFed Trust Anchor.
-- https://rp1.dev.localhost: Relaying Party 1, which is an entity controlled by the pilot team offering a simple OIDFed Relaying Party. It's a subordinate of the Intermediate Authority 1. It's based on OFFA - Openid Federation Forward Auth (https://go-oidfed.github.io/offa/).
+The local pilot environment consists of the following elements:
+
+- https://ta.dev.localhost: eduGAIN OpenID Federation Pilot Trust Anchor, based on LightHouse (https://go-oidfed.github.io/lighthouse/).
+- https://ia1.dev.localhost: Intermediate Authority 1, a mock federation subordinate to the eduGAIN pilot Trust Anchor.
+- https://ia2.dev.localhost: Intermediate Authority 2, a second mock federation subordinate to the eduGAIN pilot Trust Anchor.
+- https://op1.dev.localhost: OpenID Provider 1, a Shibboleth IdP-based OP wired into the pilot by `pilot/op1`.
+- https://rp1.dev.localhost: Relying Party 1, a simple OIDFed relying party based on OFFA (https://go-oidfed.github.io/offa/) and subordinate to IA1.
+- https://mdq.dev.localhost: local SAML Metadata Query service used as the source of truth for IdP/SP metadata.
+- https://ds.dev.localhost: local SAML Discovery Service used by SAML SPs to select an IdP.
+- https://sp1.dev.localhost: SAML SP 1, a simple Apache/mod_auth_mellon SP that consumes metadata from MDQ and uses DS for IdP selection.
 
 
 ```mermaid
@@ -31,18 +36,58 @@ graph TD;
   E[eduGAIN Pilot<br> Trust Anchor];
   PIA1[Pilot<br> IA1];
   POP1[Pilot<br> OP1];
+  PMDQ[Pilot<br> MDQ];
+  PDS[Pilot<br> DS];
+  PSP1[Pilot<br> SP1];
   PRP1[Pilot<br> RP1];
   PIA2[Pilot<br> IA2];
   E-->PIA1;
   E-->PIA2;
   PIA1-->POP1;
-  PIA1-->PRP1;  
+  PIA1-->PRP1;
+  PMDQ-->POP1;
+  PMDQ-->PSP1;
+  PDS-->PSP1;
+  POP1-- SAML -->PSP1;
 ```
 
 > [!NOTE]
 > The pilot infrastructure is based on a series of docker instances. All the
 > configuration files used to set up the dockers are available in the `pilot` directory
 > (keys and running data excluded). 
+
+### Local startup
+
+Run the complete local stack from `pilot`:
+
+```bash
+./start-all.sh
+```
+
+Stop it with:
+
+```bash
+./stop-all.sh
+```
+
+Useful local tests:
+
+- OIDC bilateral flow: https://oidc-test.dev.localhost
+- SAML MDQ/DS flow: https://sp1.dev.localhost
+- SAML MDQ: https://mdq.dev.localhost/entities
+- SAML DS: https://ds.dev.localhost
+- LDAP admin UI: https://ldap-ui.dev.localhost
+
+Seeded OP1 users:
+
+- `alice` / `alicepw`
+- `bob` / `bobpw`
+
+Run health checks from `pilot`:
+
+```bash
+./checks
+```
 
 ## Pilot Participation
 
