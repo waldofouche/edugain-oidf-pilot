@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AttributeFilterPolicyGroup id="ShibbolethFilterPolicy"
+        xmlns="urn:mace:shibboleth:2.0:afp"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:mace:shibboleth:2.0:afp http://shibboleth.net/schema/idp/shibboleth-afp.xsd">
+
+    <AttributeFilterPolicy id="alwaysRelease">
+        <PolicyRequirementRule xsi:type="ANY" />
+
+        <AttributeRule attributeID="schacHomeOrganization" permitAny="true" />
+    </AttributeFilterPolicy>
+
+    <AttributeFilterPolicy id="releaseToLocalOIDCRP">
+        <PolicyRequirementRule xsi:type="Requester" value="sp1-oidc-client" />
+
+        <AttributeRule attributeID="uid" permitAny="true" />
+        <AttributeRule attributeID="subject" permitAny="true" />
+        <AttributeRule attributeID="mail" permitAny="true" />
+        <AttributeRule attributeID="eduPersonPrincipalName" permitAny="true" />
+    </AttributeFilterPolicy>
+
+</AttributeFilterPolicyGroup>

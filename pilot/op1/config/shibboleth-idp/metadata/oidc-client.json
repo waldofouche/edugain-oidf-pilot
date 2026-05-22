@@ -1,0 +1,16 @@
+[
+  {
+    "scope": "openid profile email",
+    "redirect_uris": [
+      "https://oidc-test.dev.localhost/oauth2/callback"
+    ],
+    "client_id": "sp1-oidc-client",
+    "client_secret": "sp1-oidc-secret-change",
+    "response_types": [
+      "code"
+    ],
+    "grant_types": [
+      "authorization_code"
+    ]
+  }
+]

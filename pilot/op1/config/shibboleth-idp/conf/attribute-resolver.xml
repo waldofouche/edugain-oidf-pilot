@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AttributeResolver
+        xmlns="urn:mace:shibboleth:2.0:resolver"
+        xmlns:oidc="urn:mace:shibboleth:2.0:resolver:oidc"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:mace:shibboleth:2.0:resolver http://shibboleth.net/schema/idp/shibboleth-attribute-resolver.xsd
+                            urn:mace:shibboleth:2.0:resolver:oidc http://shibboleth.net/schema/oidc/shibboleth-attribute-encoder-oidc.xsd">
+
+    <!-- ========================================== -->
+    <!--      Attribute Definitions                 -->
+    <!-- ========================================== -->
+
+    <AttributeDefinition id="eduPersonPrincipalName" xsi:type="Scoped" scope="%{idp.scope}">
+        <InputAttributeDefinition ref="uid" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="uid" xsi:type="PrincipalName" />
+
+    <AttributeDefinition id="subject" xsi:type="Scoped" scope="%{idp.scope}"
+            activationConditionRef="shibboleth.oidc.Conditions.SubjectRequired">
+        <InputDataConnector ref="computedSubjectId" attributeNames="subjectId" />
+        <AttributeEncoder xsi:type="oidc:OIDCScopedString" name="sub" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="mail" xsi:type="Template">
+        <InputAttributeDefinition ref="uid" />
+        <Template>
+          <![CDATA[
+               ${uid}@example.org
+          ]]>
+        </Template>
+    </AttributeDefinition>
+
+    <AttributeDefinition id="eduPersonScopedAffiliation" xsi:type="Scoped" scope="%{idp.scope}">
+        <InputDataConnector ref="staticAttributes" attributeNames="affiliation" />
+    </AttributeDefinition>
+
+    <!-- ========================================== -->
+    <!--      Data Connectors                       -->
+    <!-- ========================================== -->
+
+    <DataConnector id="staticAttributes" xsi:type="Static" exportAttributes="schacHomeOrganization">
+        <Attribute id="schacHomeOrganization">
+            <Value>%{idp.scope}</Value>
+        </Attribute>
+        <Attribute id="affiliation">
+            <Value>member</Value>
+        </Attribute>
+    </DataConnector>
+
+    <DataConnector id="computedSubjectId" xsi:type="ComputedId"
+            generatedAttributeID="subjectId"
+            salt="%{idp.oidc.subject.salt}"
+            algorithm="%{idp.oidc.subject.algorithm:SHA}"
+            encoding="BASE32">
+        <InputAttributeDefinition ref="%{idp.oidc.subject.sourceAttribute}" />
+    </DataConnector>
+
+</AttributeResolver>
