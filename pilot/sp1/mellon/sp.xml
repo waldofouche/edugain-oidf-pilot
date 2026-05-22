@@ -1,0 +1,19 @@
+<EntityDescriptor entityID="https://sp1.dev.localhost/mellon" xmlns="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+  <SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <KeyDescriptor use="signing">
+      <ds:KeyInfo>
+        <ds:X509Data>
+          <ds:X509Certificate>MIIDgzCCAmugAwIBAgIUaUeDVsxmSYrQCziYgAut7MwPteYwDQYJKoZIhvcNAQELBQAwUTEaMBgGA1UEAwwRc3AxLmRldi5sb2NhbGhvc3QxGzAZBgNVBAoMEmVkdUdBSU4gT0lERiBQaWxvdDEWMBQGA1UECwwNU1AxIFNBTUwgVGVzdDAeFw0yNjA1MjIwNTA1MDhaFw0zNjA1MTkwNTA1MDhaMFExGjAYBgNVBAMMEXNwMS5kZXYubG9jYWxob3N0MRswGQYDVQQKDBJlZHVHQUlOIE9JREYgUGlsb3QxFjAUBgNVBAsMDVNQMSBTQU1MIFRlc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCvRonbwxarAOSSWjbr7RlOQtsPonxKrIvXGdcZ9bgkwzAuW6VK1bv29GucjZbfo+EDZGETYIgzLNv+RubJPVWqOOt/V8JjUgoa6pj6BFClXBX/FVPkVoh3k/rEcdOq7FN6s0aSLseK7Wo08V30NLdTOC4tj7QFbQQfyVdzrswcoc7zxvI1czM1t5Ejslqnv95XNbpUSmJrCK6oQ6sD6j87sBXEvPtthK+mws23f0KrmR5H0/Gka50O5WTlcrDTqClc7ITVdPq2jBXTkHJ2MXhnxhNVRBQF55oGiMs49Et9fUsF+jFYIGB4El4Wu0V13GwI1nlSagVrVtfbLBfBlSEZAgMBAAGjUzBRMB0GA1UdDgQWBBT2ivHIEsAPIRGtun4ZBy3r0CZr7DAfBgNVHSMEGDAWgBT2ivHIEsAPIRGtun4ZBy3r0CZr7DAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQA+hXUYCtDpQwsJuZSdqF8wwBu2GuhJnODI3HjYUtgWd6T3noxQkSkMxP2BsZxHxEKEqbLcOTWraEYaneO5KmrLimhnarMuNMP6T63lASh6ZeDnOXq9OB1eBRKrOZzgIOSq4n1DIti9OxiTsz3qLyRL7c5vC87ZYDHdSpjCvY14jKbhXCyKZ4eg9CtW6m7UYM7ArAhnHKADpJQH0dTkKMn7n6QRWWPvBeoqjjkXBGG7z/pxRUvSfuoxOU3I+SEVzF/FYSqMWEob/JYBJUX3y9OEgQ8qOJWmOTTPCWn2T3PFyIMUz9sKMiYTybdcvjz01sqohdvI+PbqvS0VAOQ/oNoj</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </KeyDescriptor>
+    <KeyDescriptor use="encryption">
+      <ds:KeyInfo>
+        <ds:X509Data>
+          <ds:X509Certificate>MIIDgzCCAmugAwIBAgIUaUeDVsxmSYrQCziYgAut7MwPteYwDQYJKoZIhvcNAQELBQAwUTEaMBgGA1UEAwwRc3AxLmRldi5sb2NhbGhvc3QxGzAZBgNVBAoMEmVkdUdBSU4gT0lERiBQaWxvdDEWMBQGA1UECwwNU1AxIFNBTUwgVGVzdDAeFw0yNjA1MjIwNTA1MDhaFw0zNjA1MTkwNTA1MDhaMFExGjAYBgNVBAMMEXNwMS5kZXYubG9jYWxob3N0MRswGQYDVQQKDBJlZHVHQUlOIE9JREYgUGlsb3QxFjAUBgNVBAsMDVNQMSBTQU1MIFRlc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCvRonbwxarAOSSWjbr7RlOQtsPonxKrIvXGdcZ9bgkwzAuW6VK1bv29GucjZbfo+EDZGETYIgzLNv+RubJPVWqOOt/V8JjUgoa6pj6BFClXBX/FVPkVoh3k/rEcdOq7FN6s0aSLseK7Wo08V30NLdTOC4tj7QFbQQfyVdzrswcoc7zxvI1czM1t5Ejslqnv95XNbpUSmJrCK6oQ6sD6j87sBXEvPtthK+mws23f0KrmR5H0/Gka50O5WTlcrDTqClc7ITVdPq2jBXTkHJ2MXhnxhNVRBQF55oGiMs49Et9fUsF+jFYIGB4El4Wu0V13GwI1nlSagVrVtfbLBfBlSEZAgMBAAGjUzBRMB0GA1UdDgQWBBT2ivHIEsAPIRGtun4ZBy3r0CZr7DAfBgNVHSMEGDAWgBT2ivHIEsAPIRGtun4ZBy3r0CZr7DAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQA+hXUYCtDpQwsJuZSdqF8wwBu2GuhJnODI3HjYUtgWd6T3noxQkSkMxP2BsZxHxEKEqbLcOTWraEYaneO5KmrLimhnarMuNMP6T63lASh6ZeDnOXq9OB1eBRKrOZzgIOSq4n1DIti9OxiTsz3qLyRL7c5vC87ZYDHdSpjCvY14jKbhXCyKZ4eg9CtW6m7UYM7ArAhnHKADpJQH0dTkKMn7n6QRWWPvBeoqjjkXBGG7z/pxRUvSfuoxOU3I+SEVzF/FYSqMWEob/JYBJUX3y9OEgQ8qOJWmOTTPCWn2T3PFyIMUz9sKMiYTybdcvjz01sqohdvI+PbqvS0VAOQ/oNoj</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </KeyDescriptor>
+    <AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://sp1.dev.localhost/mellon/postResponse" index="0" isDefault="true" />
+  </SPSSODescriptor>
+</EntityDescriptor>

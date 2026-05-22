@@ -49,7 +49,9 @@ services:
       - ./config/shibboleth-idp/conf/oidc.properties:/opt/shibboleth-idp/conf/oidc.properties:ro
       - ./config/shibboleth-idp/conf/oidc-unregistered-client-policy.json:/opt/shibboleth-idp/conf/oidc-unregistered-client-policy.json:ro
       - ./config/shibboleth-idp/conf/relying-party.xml:/opt/shibboleth-idp/conf/relying-party.xml:ro
+      - ./config/shibboleth-idp/conf/metadata-providers.xml:/opt/shibboleth-idp/conf/metadata-providers.xml:ro
       - ./config/shibboleth-idp/metadata/oidc-client.json:/opt/shibboleth-idp/metadata/oidc-client.json:ro
+      - ../sp1/mellon/sp.xml:/opt/shibboleth-idp/metadata/saml-sp.xml:ro
       - ./logs/idp:/opt/shibboleth-idp/logs
       - ./logs/jetty:/opt/jetty-base/logs
     networks:

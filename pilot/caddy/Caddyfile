@@ -30,6 +30,10 @@ oidc-test.dev.localhost {
   reverse_proxy oidc-test:4180
 }
 
+sp1.dev.localhost {
+  reverse_proxy sp1:80
+}
+
 op1.dev.localhost {
   @oidcDiscovery path /.well-known/openid-configuration
   rewrite @oidcDiscovery /idp/profile/oidc/configuration

@@ -8,6 +8,7 @@ required_hosts=(
   ia2.dev.localhost
   rp1.dev.localhost
   op1.dev.localhost
+  sp1.dev.localhost
   whoami.dev.localhost
 )
 

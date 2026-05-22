@@ -19,4 +19,12 @@
         <AttributeRule attributeID="eduPersonPrincipalName" permitAny="true" />
     </AttributeFilterPolicy>
 
+    <AttributeFilterPolicy id="releaseToLocalSAMLSP">
+        <PolicyRequirementRule xsi:type="Requester" value="https://sp1.dev.localhost/mellon" />
+
+        <AttributeRule attributeID="uid" permitAny="true" />
+        <AttributeRule attributeID="mail" permitAny="true" />
+        <AttributeRule attributeID="eduPersonPrincipalName" permitAny="true" />
+    </AttributeFilterPolicy>
+
 </AttributeFilterPolicyGroup>

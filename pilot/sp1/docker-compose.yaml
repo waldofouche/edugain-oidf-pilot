@@ -1,0 +1,20 @@
+services:
+  sp1:
+    image: edugain-pilot/sp1-saml-sp:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./apache/saml-sp.conf:/etc/apache2/sites-enabled/000-default.conf:ro
+      - ./mellon:/etc/apache2/mellon:ro
+      - ./www/index.html:/var/www/html/index.html:ro
+      - ./www/cgi-bin/env.cgi:/usr/lib/cgi-bin/env.cgi:ro
+    networks:
+      - caddy
+
+networks:
+  caddy:
+    external: true
+    name: caddy-network
+
