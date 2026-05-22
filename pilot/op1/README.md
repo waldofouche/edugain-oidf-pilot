@@ -42,7 +42,7 @@ The OP1 Dockerfile will:
 - pass hostname-derived IdP/OIDC properties at container startup from `IDP_HOST`
 - regenerate the local self-signed browser-facing credential if `IDP_HOST` changes
 
-Scripts `02` and `03` are no longer part of the normal setup path. Plugin installation is folded into `Dockerfile.shib-op1`, and the OP configuration files that script `03` used to write are mounted from `config/shibboleth-idp`.
+The old post-start plugin/configuration scripts have been removed. Plugin installation is folded into `Dockerfile.shib-op1`, and OP configuration is mounted from `config/shibboleth-idp`.
 
 ## Changing the OP host
 

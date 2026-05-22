@@ -10,7 +10,7 @@ ENV JETTY_BASE=/opt/jetty-base
 ENV JETTY_LOGS=/opt/jetty-base/logs
 ENV IDP_HOME=/opt/shibboleth-idp
 
-RUN apk add --no-cache bash curl openssl python3
+RUN apk add --no-cache bash curl openssl
 
 ARG JETTY_BASE_VERSION=12.1
 ARG JETTY_VERSION=12.1.9
@@ -30,9 +30,14 @@ RUN /bin/bash <<'EOF'
 set -euo pipefail
 
 snapshot_keys_file="/tmp/SHIBBOLETH_SNAPSHOT_PGP_KEYS"
-curl -fsSL --connect-timeout 10 --max-time 120 --retry 2 --retry-delay 2 \
-  "https://shibboleth.net/downloads/SHIBBOLETH_SNAPSHOT_PGP_KEYS" \
-  -o "${snapshot_keys_file}"
+
+ensure_snapshot_keys() {
+  if [[ ! -s "${snapshot_keys_file}" ]]; then
+    curl -fsSL --connect-timeout 10 --max-time 120 --retry 2 --retry-delay 2 \
+      "https://shibboleth.net/downloads/SHIBBOLETH_SNAPSHOT_PGP_KEYS" \
+      -o "${snapshot_keys_file}"
+  fi
+}
 
 url_join() {
   local base="$1"
@@ -73,6 +78,7 @@ install_plugin() {
   fi
   url="$(resolve_latest_tarball "${base_url}")"
   echo "Installing ${plugin_id} from ${url}"
+  ensure_snapshot_keys
   "${IDP_HOME}/bin/plugin.sh" --noCheck --truststore "${snapshot_keys_file}" -i "${url}" --noPrompt
 }
 

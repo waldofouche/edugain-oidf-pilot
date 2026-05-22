@@ -45,7 +45,8 @@ issuer="https://${IDP_HOST}"
 entity_id="${issuer}/idp/shibboleth"
 
 export IDP_HOME IDP_HOST IDP_SCOPE
-export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Didp.entityID=${entity_id} -Didp.scope=${IDP_SCOPE} -Didp.oidc.issuer=${issuer}"
+idp_java_options="-Didp.entityID=${entity_id} -Didp.scope=${IDP_SCOPE} -Didp.oidc.issuer=${issuer}"
+export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:+${JAVA_TOOL_OPTIONS} }${idp_java_options}"
 
 echo "Configured Shibboleth IdP host=${IDP_HOST} scope=${IDP_SCOPE}"
 
