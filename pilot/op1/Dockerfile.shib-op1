@@ -1,0 +1,42 @@
+ARG JAVA_VERSION=amazoncorretto:25
+
+FROM ${JAVA_VERSION}-alpine
+
+LABEL org.opencontainers.image.title="eduGAIN OIDF Pilot OP1 Shibboleth IdP"
+LABEL org.opencontainers.image.description="Shibboleth IdP OP image with runtime-configurable host name"
+
+ENV JETTY_HOME=/opt/jetty
+ENV JETTY_BASE=/opt/jetty-base
+ENV JETTY_LOGS=/opt/jetty-base/logs
+ENV IDP_HOME=/opt/shibboleth-idp
+
+RUN apk add --no-cache bash curl openssl python3
+
+ARG JETTY_BASE_VERSION=12.1
+ARG JETTY_VERSION=12.1.9
+
+COPY shibboleth-idp-docker/jetty-base-${JETTY_BASE_VERSION} ${JETTY_BASE}
+COPY shibboleth-idp-docker/jetty-dist-${JETTY_VERSION}/dist ${JETTY_HOME}
+ADD shibboleth-idp-docker/overlay/jetty-base-${JETTY_BASE_VERSION}.tar ${JETTY_BASE}
+
+COPY shibboleth-idp-docker/shibboleth-idp ${IDP_HOME}
+COPY shib-op1-entrypoint.sh /usr/local/bin/shib-op1-entrypoint.sh
+
+RUN chmod 0755 /usr/local/bin/shib-op1-entrypoint.sh \
+    && mkdir -p "${JETTY_LOGS}" "${IDP_HOME}/logs"
+
+EXPOSE 80 443 8443
+VOLUME ["/opt/jetty-base/logs", "/opt/shibboleth-idp/logs"]
+
+WORKDIR ${JETTY_BASE}
+ENTRYPOINT ["/usr/local/bin/shib-op1-entrypoint.sh"]
+CMD ["java", \
+    "-Djdk.tls.ephemeralDHKeySize=2048", \
+    "-Didp.home=/opt/shibboleth-idp", \
+    "-Djetty.base=/opt/jetty-base", \
+    "-Djetty.logs=/opt/jetty-base/logs", \
+    "-jar", "/opt/jetty/start.jar"]
+
+HEALTHCHECK --interval=1m --timeout=30s \
+    CMD curl -f -s http://127.0.0.1/idp/status || exit 1
+

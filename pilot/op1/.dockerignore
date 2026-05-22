@@ -1,0 +1,8 @@
+.git
+logs/
+*.bak
+shibboleth-idp-docker/fetched/
+shibboleth-idp-docker/fetched-*/
+shibboleth-idp-docker/logs/
+shibboleth-idp-docker/saved-*/
+

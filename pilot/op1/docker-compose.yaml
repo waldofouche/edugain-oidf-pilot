@@ -27,12 +27,17 @@ services:
       - caddy
 
   shibop1:
-    image: shibboleth-idp:12.1.9
+    image: edugain-pilot/shib-op1:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.shib-op1
+    environment:
+      IDP_HOST: ${IDP_HOST:-op1.dev.localhost}
+      IDP_SCOPE: ${IDP_SCOPE:-dev.localhost}
     restart: unless-stopped
     depends_on:
       - ldap
     volumes:
-      - ./shibboleth-idp-docker/shibboleth-idp:/opt/shibboleth-idp
       - ./logs/idp:/opt/shibboleth-idp/logs
       - ./logs/jetty:/opt/jetty-base/logs
     networks:
@@ -45,7 +50,7 @@ services:
       - shibop1
     environment:
       OAUTH2_PROXY_PROVIDER: oidc
-      OAUTH2_PROXY_OIDC_ISSUER_URL: https://op1.dev.localhost
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://${IDP_HOST:-op1.dev.localhost}
       OAUTH2_PROXY_CLIENT_ID: sp1-oidc-client
       OAUTH2_PROXY_CLIENT_SECRET: sp1-oidc-secret-change
       OAUTH2_PROXY_REDIRECT_URL: https://oidc-test.dev.localhost/oauth2/callback
@@ -57,7 +62,7 @@ services:
       OAUTH2_PROXY_SSL_INSECURE_SKIP_VERIFY: "true"
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
     extra_hosts:
-      - "op1.dev.localhost:host-gateway"
+      - "${IDP_HOST:-op1.dev.localhost}:host-gateway"
     networks:
       - caddy
 
