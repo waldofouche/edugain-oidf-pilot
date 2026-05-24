@@ -40,6 +40,7 @@ services:
     volumes:
       - ./config/shibboleth-idp/conf/credentials.xml:/opt/shibboleth-idp/conf/credentials.xml:ro
       - ./config/shibboleth-idp/conf/attributes/default-rules.xml:/opt/shibboleth-idp/conf/attributes/default-rules.xml:ro
+      - ./config/shibboleth-idp/conf/attributes/pilot-attribute-rules.xml:/opt/shibboleth-idp/conf/attributes/pilot-attribute-rules.xml:ro
       - ./config/shibboleth-idp/conf/attribute-resolver.xml:/opt/shibboleth-idp/conf/attribute-resolver.xml:ro
       - ./config/shibboleth-idp/conf/attribute-filter.xml:/opt/shibboleth-idp/conf/attribute-filter.xml:ro
       - ./config/shibboleth-idp/conf/ldap.properties:/opt/shibboleth-idp/conf/ldap.properties:ro

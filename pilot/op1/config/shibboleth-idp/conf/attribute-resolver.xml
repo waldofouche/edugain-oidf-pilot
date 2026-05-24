@@ -10,11 +10,55 @@
     <!--      Attribute Definitions                 -->
     <!-- ========================================== -->
 
+    <AttributeDefinition id="auEduPersonLegalName" xsi:type="Simple">
+        <InputDataConnector ref="directory" attributeNames="displayName" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="auEduPersonSharedToken" xsi:type="Template">
+        <InputAttributeDefinition ref="uid" />
+        <Template><![CDATA[urn:uuid:edugain-oidf-pilot-${uid}]]></Template>
+    </AttributeDefinition>
+
+    <AttributeDefinition id="eduPersonScopedAffiliation" xsi:type="Scoped" scope="%{idp.scope}">
+        <InputDataConnector ref="staticAttributes" attributeNames="affiliation" />
+    </AttributeDefinition>
+
     <AttributeDefinition id="eduPersonPrincipalName" xsi:type="Scoped" scope="%{idp.scope}">
         <InputAttributeDefinition ref="uid" />
     </AttributeDefinition>
 
-    <AttributeDefinition id="uid" xsi:type="PrincipalName" />
+    <AttributeDefinition id="eduPersonTargetedID" xsi:type="Simple">
+        <InputDataConnector ref="computedSubjectId" attributeNames="subjectId" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="homeOrganization" xsi:type="Simple">
+        <InputDataConnector ref="staticAttributes" attributeNames="schacHomeOrganization" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="homeOrganizationType" xsi:type="Simple">
+        <InputDataConnector ref="staticAttributes" attributeNames="schacHomeOrganizationType" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="mobileNumber" xsi:type="Simple">
+        <InputDataConnector ref="directory" attributeNames="mobile" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="organizationalUnit" xsi:type="Simple">
+        <InputDataConnector ref="directory" attributeNames="ou" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="persistentNameID" xsi:type="Template">
+        <InputDataConnector ref="computedSubjectId" attributeNames="subjectId" />
+        <Template><![CDATA[https://op1.dev.localhost!${subjectId}]]></Template>
+    </AttributeDefinition>
+
+    <AttributeDefinition id="samlPairwiseID" xsi:type="Scoped" scope="%{idp.scope}">
+        <InputDataConnector ref="computedSubjectId" attributeNames="subjectId" />
+    </AttributeDefinition>
+
+    <AttributeDefinition id="samlSubjectID" xsi:type="Scoped" scope="%{idp.scope}">
+        <InputDataConnector ref="computedSubjectId" attributeNames="subjectId" />
+    </AttributeDefinition>
 
     <AttributeDefinition id="subject" xsi:type="Scoped" scope="%{idp.scope}"
             activationConditionRef="shibboleth.oidc.Conditions.SubjectRequired">
@@ -22,26 +66,69 @@
         <AttributeEncoder xsi:type="oidc:OIDCScopedString" name="sub" />
     </AttributeDefinition>
 
-    <AttributeDefinition id="mail" xsi:type="Template">
-        <InputAttributeDefinition ref="uid" />
-        <Template>
-          <![CDATA[
-               ${uid}@example.org
-          ]]>
-        </Template>
+    <AttributeDefinition id="surname" xsi:type="Simple">
+        <InputDataConnector ref="directory" attributeNames="sn" />
     </AttributeDefinition>
 
-    <AttributeDefinition id="eduPersonScopedAffiliation" xsi:type="Scoped" scope="%{idp.scope}">
-        <InputDataConnector ref="staticAttributes" attributeNames="affiliation" />
-    </AttributeDefinition>
+    <AttributeDefinition id="uid" xsi:type="PrincipalName" />
 
     <!-- ========================================== -->
     <!--      Data Connectors                       -->
     <!-- ========================================== -->
 
-    <DataConnector id="staticAttributes" xsi:type="Static" exportAttributes="schacHomeOrganization">
+    <DataConnector id="directory" xsi:type="LDAPDirectory"
+            exportAttributes="businessCategory carLicense cn departmentNumber description displayName employeeNumber employeeType facsimileTelephoneNumber givenName initials l mail manager mobile o ou physicalDeliveryOfficeName postOfficeBox postalAddress postalCode preferredLanguage seeAlso sn st street telephoneNumber title"
+            ldapURL="%{idp.authn.LDAP.ldapURL}"
+            baseDN="%{idp.authn.LDAP.baseDN}"
+            principal="%{idp.authn.LDAP.bindDN}"
+            principalCredential="%{idp.authn.LDAP.bindDNCredential}">
+        <FilterTemplate><![CDATA[
+            (uid=$resolutionContext.principal)
+        ]]></FilterTemplate>
+        <ReturnAttributes>%{idp.authn.LDAP.returnAttributes}</ReturnAttributes>
+    </DataConnector>
+
+    <DataConnector id="staticAttributes" xsi:type="Static"
+            exportAttributes="authenticationMethod division dsdStudentID eduPersonAffiliation eduPersonAssurance eduPersonEntitlement eduPersonOrcid eduPersonPrimaryAffiliation identityProviderEntityId schacHomeOrganization schacHomeOrganizationType schacPersonalUniqueID voPersonAffiliation">
+        <Attribute id="authenticationMethod">
+            <Value>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</Value>
+        </Attribute>
+        <Attribute id="division">
+            <Value>Identity Services</Value>
+        </Attribute>
+        <Attribute id="dsdStudentID">
+            <Value>DSD-Alice-0001</Value>
+        </Attribute>
+        <Attribute id="eduPersonAffiliation">
+            <Value>member</Value>
+            <Value>staff</Value>
+        </Attribute>
+        <Attribute id="eduPersonAssurance">
+            <Value>https://refeds.org/assurance</Value>
+        </Attribute>
+        <Attribute id="eduPersonEntitlement">
+            <Value>urn:mace:dir:entitlement:common-lib-terms</Value>
+        </Attribute>
+        <Attribute id="eduPersonOrcid">
+            <Value>https://orcid.org/0000-0002-1825-0097</Value>
+        </Attribute>
+        <Attribute id="eduPersonPrimaryAffiliation">
+            <Value>staff</Value>
+        </Attribute>
+        <Attribute id="identityProviderEntityId">
+            <Value>https://op1.dev.localhost/idp/shibboleth</Value>
+        </Attribute>
         <Attribute id="schacHomeOrganization">
             <Value>%{idp.scope}</Value>
+        </Attribute>
+        <Attribute id="schacHomeOrganizationType">
+            <Value>urn:schac:homeOrganizationType:int:university</Value>
+        </Attribute>
+        <Attribute id="schacPersonalUniqueID">
+            <Value>urn:schac:personalUniqueID:int:esi:op1.dev.localhost:alice</Value>
+        </Attribute>
+        <Attribute id="voPersonAffiliation">
+            <Value>member</Value>
         </Attribute>
         <Attribute id="affiliation">
             <Value>member</Value>

@@ -29,6 +29,7 @@ physicalDeliveryOfficeName: Building A
 street: 1 Federation Way
 l: Testville
 st: Test State
+postalAddress: 1 Federation Way$Testville, Test State 00001
 postalCode: 00001
 postOfficeBox: PO Box 101
 telephoneNumber: +1 555 0101
@@ -37,6 +38,8 @@ mobile: +1 555 2101
 facsimileTelephoneNumber: +1 555 3101
 uid: alice
 mail: alice@op1.dev.localhost
+manager: uid=bob,ou=people,dc=op1,dc=dev,dc=localhost
+seeAlso: uid=bob,ou=people,dc=op1,dc=dev,dc=localhost
 labeledURI: https://op1.dev.localhost/alice
 preferredLanguage: en
 initials: AE
