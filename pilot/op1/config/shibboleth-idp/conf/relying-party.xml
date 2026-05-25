@@ -24,6 +24,7 @@
             <list>
             <!-- <bean parent="SAML2.SSO" p:encryptAssertions="false" /> -->
                 <ref bean="OIDC.Keyset" />
+                <bean parent="OIDC.Registration" />
                 <ref bean="OIDC.Configuration" />
                 <ref bean="OIDFED.Configuration" />
             </list>
