@@ -54,6 +54,14 @@ services:
       - ./config/shibboleth-idp/conf/relying-party.xml:/opt/shibboleth-idp/conf/relying-party.xml:ro
       - ./config/shibboleth-idp/conf/metadata-providers.xml:/opt/shibboleth-idp/conf/metadata-providers.xml:ro
       - ./config/shibboleth-idp/metadata:/opt/shibboleth-idp/metadata
+      # Mount runtime overlays from the config/ directory so templates, messages
+      # and the edit-webapp can be updated without rebuilding the image.
+      - ./config/shibboleth-idp/edit-webapp:/opt/shibboleth-idp/edit-webapp:ro
+      - ./config/shibboleth-idp/messages:/opt/shibboleth-idp/messages:ro
+      - ./config/shibboleth-idp/views:/opt/shibboleth-idp/views:ro
+      # Provide a static openid-configuration.json in the config overlay so that
+      # template placeholders in the image are not used unrendered.
+      - ./config/shibboleth-idp/static/openid-configuration.json:/opt/shibboleth-idp/static/openid-configuration.json:ro
       - ./logs/idp:/opt/shibboleth-idp/logs
       - ./logs/jetty:/opt/jetty-base/logs
     networks:
