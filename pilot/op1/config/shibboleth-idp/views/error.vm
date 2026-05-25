@@ -1,31 +1,17 @@
 ##
 ## Velocity Template for error end-state
 ##
-## Velocity context will contain the following variables during controlled errors.
-##
-## request - HttpServletRequest
-## response - HttpServletResponse
-## environment - Spring Environment object for property resolution
-## encoder - HTMLEncoder class
-## cspDigester - Calculates base64-encoded SHA-2 hashes (call apply)
-## cspNonce - Calculates secure nonces (call generateIdentifier)
-## custom - arbitrary object injected by deployer
-##
-## Some error paths involve runtime exceptions handled outside Spring Web Flow by the
-## MVC layer and will not generally populate these variables:
-##
-## flowRequestContext - the Spring Web Flow RequestContext
-## profileRequestContext - root of context tree
-##
-#set ($title = $springMacroRequestContext.getMessage("idp.title", "Web Login Service"))
+
+#set ($title = $springMacroRequestContext.getMessage("idp.title", "Login"))
 #set ($defaultTitleSuffix = $springMacroRequestContext.getMessage("idp.title.suffix", "Error"))
-##
+
 #if ($flowRequestContext)
-	## This handles flow events, the most common case.
+
     #set ($eventId = $flowRequestContext.getCurrentEvent().getId())
     #set ($eventKey = $springMacroRequestContext.getMessage("$eventId", "error"))
     #set ($titleSuffix = $springMacroRequestContext.getMessage("${eventKey}.title", "$defaultTitleSuffix"))
     #set ($message = $springMacroRequestContext.getMessage("${eventKey}.message", "$defaultTitleSuffix: $eventId"))
+
     #if ($eventId == "AccessDenied" or $eventId == "ContextCheckDenied")
         $response.setStatus(403)
     #elseif ($eventId == "AttributeReleaseRejected" || $eventId == "TermsRejected")
@@ -35,45 +21,173 @@
     #else
         $response.setStatus(400)
     #end
+
 #elseif ($exception)
-	## This handles exceptions that reach the Spring-MVC exception handler.
+
     #set ($eventId = $exception.getClass().getSimpleName())
     #set ($eventKey = $springMacroRequestContext.getMessage("$eventId", "error"))
     #set ($titleSuffix = $springMacroRequestContext.getMessage("${eventKey}.title", "$defaultTitleSuffix"))
     #set ($message = $springMacroRequestContext.getMessage("${eventKey}.message", "$defaultTitleSuffix: $eventId"))
+
     $response.setStatus(500)
+
 #else
-	## This is a catch-all that theoretically shouldn't happen?
+
     #set ($titleSuffix = $defaultTitleSuffix)
     #set ($message = $springMacroRequestContext.getMessage("idp.message", "An unidentified error occurred."))
+
     $response.setStatus(500)
+
 #end
-##
-$response.addHeader("Content-Security-Policy", "script-src 'none'")
+
+#set ($nonce = $cspNonce.generateIdentifier())
+
+$response.addHeader(
+    "Content-Security-Policy",
+    "script-src-elem 'nonce-$nonce' https://cdn.tailwindcss.com; script-src 'none';"
+)
+
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-        <link rel="stylesheet" type="text/css" href="$request.getContextPath()#springMessageText("idp.css", "/css/placeholder.css")">
-    </head>
-  	
-    <body>
-        <main class="main">
-            <header>
-                <img class="main-logo" src="$request.getContextPath()#springMessageText("idp.logo", "/images/placeholder-logo.png")" alt="#springMessageText("idp.logo.alt-text", "logo")" />
-            </header>
-            
-            <section>
-                <h1>$title - $titleSuffix</h1>
-                <p>#evaluate($message)</p>
-            </section>
-        </main>
-        <footer class="footer">
-            <div class="cc">
-                <p>#springMessageText("idp.footer", "Insert your footer text here.")</p>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+
+    <title>$title - $titleSuffix</title>
+
+    <script #if ($nonce)nonce="$nonce"#end src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: Inter, system-ui, sans-serif;
+        }
+    </style>
+
+</head>
+
+<body class="min-h-screen bg-slate-100 flex flex-col">
+
+<main class="flex-1 flex items-center justify-center px-4 py-10">
+
+    <div class="w-full max-w-lg">
+
+        <!-- Error Card -->
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+
+            <!-- Header -->
+            <div class="bg-slate-900 px-8 py-6 text-white">
+
+                <div class="flex items-center gap-4">
+
+                    <img
+                            class="w-14 h-14 object-contain rounded-lg bg-white p-2"
+                            src="$request.getContextPath()#springMessageText('idp.logo', '/images/placeholder-logo.png')"
+                            alt="#springMessageText('idp.logo.alt-text', 'logo')"
+                    />
+
+                    <div>
+                        <h1 class="text-2xl font-semibold">
+                            $title
+                        </h1>
+
+                        <p class="text-slate-300 text-sm mt-1">
+                            $titleSuffix
+                        </p>
+                    </div>
+
+                </div>
+
             </div>
+
+            <!-- Content -->
+            <div class="px-8 py-8">
+
+                <div class="rounded-xl border border-red-200 bg-red-50 p-5">
+
+                    <div class="flex items-start gap-4">
+
+                        <!-- Icon -->
+                        <div class="flex-shrink-0">
+
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+
+                                <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-6 w-6 text-red-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                >
+                                    <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                    />
+                                </svg>
+
+                            </div>
+
+                        </div>
+
+                        <!-- Message -->
+                        <div>
+
+                            <h2 class="text-lg font-semibold text-red-800 mb-2">
+                                Something went wrong
+                            </h2>
+
+                            <div class="text-sm text-red-700 leading-relaxed">
+                                #evaluate($message)
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Actions -->
+                <div class="mt-6 flex flex-col sm:flex-row gap-3">
+
+                    <a
+                            href="$request.getContextPath()/"
+                            class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300"
+                    >
+                        Return to Login
+                    </a>
+
+                    <a
+                            href="#springMessageText('idp.url.helpdesk', '#')"
+                            class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                        Contact Support
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-sm text-slate-500">
+
+            <p>
+                #springMessageText(
+                        "idp.footer",
+                    "© 2026 Your Organisation. All rights reserved."
+                    )
+            </p>
+
         </footer>
-    </body>
+
+    </div>
+
+</main>
+
+</body>
 </html>

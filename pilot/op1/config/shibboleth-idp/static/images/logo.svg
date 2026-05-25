@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Simple example SVG logo for local dev; small, permissive, and accessible -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" role="img" aria-labelledby="title desc">
+  <title id="title">Example Organisation</title>
+  <desc id="desc">Example Organisation logo used for local development</desc>
+  <rect width="200" height="50" rx="6" ry="6" fill="#111827" />
+  <g transform="translate(12,9)">
+    <circle cx="16" cy="16" r="14" fill="#2563EB" />
+    <text x="44" y="24" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="16" fill="#FFFFFF">Example Org</text>
+  </g>
+</svg>
+

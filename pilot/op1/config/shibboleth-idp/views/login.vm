@@ -1,127 +1,261 @@
 ##
 ## Velocity Template for DisplayUsernamePasswordPage view-state
 ##
-## Velocity context will contain the following properties
-## flowExecutionUrl - the form action location
-## flowRequestContext - the Spring Web Flow RequestContext
-## flowExecutionKey - the SWF execution key (this is built into the flowExecutionUrl)
-## profileRequestContext - root of context tree
-## authenticationContext - context with authentication request information
-## authenticationErrorContext - context with login error state
-## authenticationWarningContext - context with login warning state
-## ldapResponseContext - context with LDAP state (if using native LDAP)
-## username - username from previous rendering of form
-## errorMessageFunction - function to produce error message for form
-## rpContext - the context with information about the relying party (SP)
-## rpUIContext - the context with SP UI information from the metadata
-## encoder - HTMLEncoder class
-## cspDigester - Calculates base64-encoded SHA-2 hashes (call apply)
-## cspNonce - Calculates secure nonces (call generateIdentifier)
-## request - HttpServletRequest
-## response - HttpServletResponse
-## environment - Spring Environment object for property resolution
-## custom - arbitrary object injected by deployer
-##
+
 #set ($nonce = $cspNonce.generateIdentifier())
-$response.addHeader("Content-Security-Policy", "script-src-elem 'nonce-$nonce'")
-#set ($onClick = "this.childNodes[0].nodeValue='#springMessageText('idp.login.pleasewait', 'Logging in, please wait...')'")
-$response.addHeader("Content-Security-Policy", "script-src-attr 'unsafe-hashes' 'sha256-$cspDigester.apply($onClick)'")
+#set ($onClick = "this.innerText='Logging in...'")
+
+$response.addHeader(
+    "Content-Security-Policy",
+    "script-src-elem 'nonce-$nonce' https://cdn.tailwindcss.com; script-src-attr 'unsafe-hashes' 'sha256-$cspDigester.apply($onClick)'"
+)
+
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>#springMessageText("idp.title", "Web Login Service")</title>
-        <meta charset="UTF-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-        <link rel="stylesheet" type="text/css" href="$request.getContextPath()#springMessageText("idp.css", "/css/placeholder.css")">
-    </head>
-    <body>
-        <main class="main">
-            <header>
-                <img class="main-logo" src="$request.getContextPath()#springMessageText("idp.logo", "/images/placeholder-logo.png")" alt="#springMessageText("idp.logo.alt-text", "logo")" />
-                
-                #set ($serviceName = $rpUIContext.serviceName)
-                #if ($serviceName && !$rpContext.getRelyingPartyId().contains($serviceName))
-                    <h1>#springMessageText("idp.login.loginTo", "Login to") $encoder.encodeForHTML($serviceName)</h1>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>#springMessageText("idp.title", "Web Login Service")</title>
+
+    <script #if ($nonce)nonce="$nonce"#end src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: Inter, system-ui, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-slate-100 flex flex-col">
+
+<main class="flex-1 flex items-center justify-center px-4 py-10">
+
+    <div class="w-full max-w-md">
+
+        <!-- Login Card -->
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+
+            <!-- Header -->
+            <div class="bg-slate-900 px-8 py-6 text-white">
+
+                <div class="flex items-center gap-4">
+
+                    <img
+                            class="w-14 h-14 object-contain rounded-lg bg-white p-2"
+                            src="$request.getContextPath()#springMessageText('idp.logo', '/images/placeholder-logo.png')"
+                            alt="#springMessageText('idp.logo.alt-text', 'logo')"
+                    />
+
+                    <div>
+                        #set ($serviceName = $rpUIContext.serviceName)
+
+                        #if ($serviceName && !$rpContext.getRelyingPartyId().contains($serviceName))
+                            <h1 class="text-2xl font-semibold leading-tight">
+                                $encoder.encodeForHTML($serviceName)
+                            </h1>
+                            <p class="text-slate-300 text-sm mt-1">
+                                Sign in to continue
+                            </p>
+                        #else
+                            <h1 class="text-2xl font-semibold">
+                                #springMessageText("idp.title", "Web Login Service")
+                            </h1>
+                        #end
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Form -->
+            <div class="px-8 py-8">
+
+                #set ($logo = $rpUIContext.getLogo())
+                #if ($logo)
+                    <div class="mb-6 text-center">
+                        <img
+                                class="mx-auto max-h-16 object-contain"
+                                src="$encoder.encodeForHTMLAttribute($logo)"
+                                alt="$encoder.encodeForHTMLAttribute($serviceName)"
+                        />
+                    </div>
                 #end
-            </header>
-            
-            <section>
-                <form action="$flowExecutionUrl" method="post">
+
+                #set ($desc = $rpUIContext.getServiceDescription())
+                #if ($desc)
+                    <div class="mb-6 text-sm text-slate-600 text-center">
+                        $encoder.encodeForHTML($desc)
+                    </div>
+                #end
+
+                #set ($errorMessage = $errorMessageFunction.apply($profileRequestContext))
+                #if ($errorMessage)
+                    <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        $encoder.encodeForHTML($errorMessage)
+                    </div>
+                #end
+
+                <form action="$flowExecutionUrl" method="post" class="space-y-5">
+
                     #parse("csrf/csrf.vm")
 
-                    #*
-                    //
-                    //    SP Description & Logo (optional)
-                    //    These idpui lines will display added information (if available
-                    //    in the metadata) about the Service Provider (SP) that requested
-                    //    authentication. These idpui lines are "active" in this example
-                    //    (not commented out) - this extra SP info will be displayed.
-                    //    Remove or comment out these lines to stop the display of the
-                    //    added SP information.
-                    //
-                    *#
-                    #set ($logo = $rpUIContext.getLogo())
-                    #if ($logo)
-                        <img class="service-logo" src= "$encoder.encodeForHTMLAttribute($logo)" alt="$encoder.encodeForHTMLAttribute($serviceName)">
-                    #end
-                    #set ($desc = $rpUIContext.getServiceDescription())
-                    #if ($desc)
-                        <p>$encoder.encodeForHTML($desc)</p>
-                    #end
-                    
-                    #set ($errorMessage = $errorMessageFunction.apply($profileRequestContext))
-                    #if ($errorMessage)
-                        <p class="output-message output--error">$encoder.encodeForHTML($errorMessage)</p>        
-                    #end
+                    <!-- Username -->
+                    <div>
+                        <label
+                                for="username"
+                                class="block text-sm font-medium text-slate-700 mb-2"
+                        >
+                            #springMessageText("idp.login.username", "Username")
+                        </label>
 
-                    <label for="username">#springMessageText("idp.login.username", "Username")</label>
-                    <input type="text" id="username" name="j_username"
-                        value="#if($username)$encoder.encodeForHTML($username)#end" />
-                        
-                    <label for="password">#springMessageText("idp.login.password", "Password")</label>
-                    <input type="password" id="password" name="j_password" value="" />
-    
-                    ## You may need to modify this to taste, such as changing the flow name checked to authn/MFA.
-                    #if (!$authenticationContext.getActiveResults().containsKey('authn/Password'))
-                        <input type="checkbox" name="donotcache" value="1" id="donotcache" />
-                        <label for="donotcache">#springMessageText("idp.login.donotcache", "Don't Remember Login")</label>
-                    #end
-    
-                    <input id="_shib_idp_revokeConsent" type="checkbox" name="_shib_idp_revokeConsent" value="true" />
-                    <label for="_shib_idp_revokeConsent">#springMessageText("idp.attribute-release.revoke", "Clear prior granting of permission for release of your information to this service.")</label>
-    
-                    <div class="grid">
-                        <div class="grid-item">
-                            <button type="submit" name="_eventId_proceed" onClick="$onClick"
-                                >#springMessageText("idp.login.login", "Login")</button>
-                        </div>
+                        <input
+                                id="username"
+                                name="j_username"
+                                type="text"
+                                autocomplete="username"
+                                value="#if($username)$encoder.encodeForHTML($username)#end"
+                                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                placeholder="Enter your username"
+                                required
+                        />
                     </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label
+                                for="password"
+                                class="block text-sm font-medium text-slate-700 mb-2"
+                        >
+                            #springMessageText("idp.login.password", "Password")
+                        </label>
+
+                        <input
+                                id="password"
+                                name="j_password"
+                                type="password"
+                                autocomplete="current-password"
+                                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                placeholder="Enter your password"
+                                required
+                        />
+                    </div>
+
+                    <!-- Options -->
+                    <div class="space-y-3">
+
+                        #if (!$authenticationContext.getActiveResults().containsKey('authn/Password'))
+                            <label class="flex items-start gap-3 text-sm text-slate-700">
+                                <input
+                                        type="checkbox"
+                                        name="donotcache"
+                                        value="1"
+                                        id="donotcache"
+                                        class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                />
+
+                                <span>
+                                    #springMessageText(
+                                            "idp.login.donotcache",
+                                        "Don't remember login"
+                                        )
+                                </span>
+                            </label>
+                        #end
+
+                        <label class="flex items-start gap-3 text-sm text-slate-700">
+                            <input
+                                    id="_shib_idp_revokeConsent"
+                                    type="checkbox"
+                                    name="_shib_idp_revokeConsent"
+                                    value="true"
+                                    class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            />
+
+                            <span>
+                                #springMessageText(
+                                        "idp.attribute-release.revoke",
+                                    "Clear prior granting of permission for release of your information to this service."
+                                    )
+                            </span>
+                        </label>
+
+                    </div>
+
+                    <!-- Submit -->
+                    <button
+                            type="submit"
+                            name="_eventId_proceed"
+                            onClick="$onClick"
+                            class="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300"
+                    >
+                        #springMessageText("idp.login.login", "Login")
+                    </button>
+
                 </form>
-    
-                <ul>
-                    <li><a href="#springMessageText("idp.url.password.reset", '#')">#springMessageText("idp.login.forgotPassword", "Forgot your password?")</a></li>
-                    <li><a href="#springMessageText("idp.url.helpdesk", '#')">#springMessageText("idp.login.needHelp", "Need Help?")</a></li>
-                </ul>
-            </section>
-        </main>
-        <footer class="footer">
-            <div class="cc">
-                <p>#springMessageText("idp.footer", "Insert your footer text here.")</p>
+
+                <!-- Links -->
+                <div class="mt-6 border-t border-slate-200 pt-5">
+
+                    <ul class="space-y-3 text-sm">
+
+                        <li>
+                            <a
+                                    href="#springMessageText('idp.url.password.reset', '#')"
+                                    class="text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                                #springMessageText(
+                                        "idp.login.forgotPassword",
+                                    "Forgot your password?"
+                                    )
+                            </a>
+                        </li>
+
+                        <li>
+                            <a
+                                    href="#springMessageText('idp.url.helpdesk', '#')"
+                                    class="text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                                #springMessageText(
+                                        "idp.login.needHelp",
+                                    "Need Help?"
+                                    )
+                            </a>
+                        </li>
+
+                    </ul>
+
+                </div>
+
             </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-sm text-slate-500">
+            <p>
+                #springMessageText(
+                        "idp.footer",
+                    "© 2026 Your Organisation. All rights reserved."
+                    )
+            </p>
         </footer>
 
-        <script #if ($nonce)nonce="$nonce"#end>
-        <!--
-        const ufield = document.getElementById('username');
-        const pfield = document.getElementById('password');
-        if (ufield.value.trim().length == 0) {
-            ufield.focus();
-        } else {
-            pfield.focus();
-        }
-        // -->
-        </script>
-        
-     </body>
+    </div>
+
+</main>
+
+<!-- Autofocus -->
+<script #if ($nonce)nonce="$nonce"#end>
+    const ufield = document.getElementById('username');
+    const pfield = document.getElementById('password');
+
+    if (ufield.value.trim().length === 0) {
+        ufield.focus();
+    } else {
+        pfield.focus();
+    }
+</script>
+
+</body>
 </html>

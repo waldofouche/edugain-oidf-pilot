@@ -62,6 +62,7 @@ services:
       # Provide a static openid-configuration.json in the config overlay so that
       # template placeholders in the image are not used unrendered.
       - ./config/shibboleth-idp/static/openid-configuration.json:/opt/shibboleth-idp/static/openid-configuration.json:ro
+      - ./config/shibboleth-idp/static/images/logo.svg:/opt/shibboleth-idp/static/images/logo.svg:ro
       - ./logs/idp:/opt/shibboleth-idp/logs
       - ./logs/jetty:/opt/jetty-base/logs
     networks:
