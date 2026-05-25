@@ -25,6 +25,7 @@
             <!-- <bean parent="SAML2.SSO" p:encryptAssertions="false" /> -->
                 <ref bean="OIDC.Keyset" />
                 <ref bean="OIDC.Configuration" />
+                <ref bean="OIDFED.Configuration" />
             </list>
         </property>
     </bean>
@@ -57,6 +58,8 @@
                 <ref bean="OAUTH2.Token"/>
                 <ref bean="OAUTH2.Revocation"/>
                 <ref bean="OAUTH2.Introspection" />
+                <ref bean="OAUTH2.PAR" />
+                <bean parent="OIDFED.AutomaticRegistration" />
             </list>
         </property>
     </bean>

@@ -49,6 +49,7 @@ services:
       - ./config/shibboleth-idp/conf/oidc-clientinfo-resolvers.xml:/opt/shibboleth-idp/conf/oidc-clientinfo-resolvers.xml:ro
       - ./config/shibboleth-idp/conf/oidc.properties:/opt/shibboleth-idp/conf/oidc.properties:ro
       - ./config/shibboleth-idp/conf/oidc-unregistered-client-policy.json:/opt/shibboleth-idp/conf/oidc-unregistered-client-policy.json:ro
+      - ./config/shibboleth-idp/conf/oidfed/oidfed-trust-anchors.json:/opt/shibboleth-idp/conf/oidfed/oidfed-trust-anchors.json:ro
       - ./config/shibboleth-idp/conf/relying-party.xml:/opt/shibboleth-idp/conf/relying-party.xml:ro
       - ./config/shibboleth-idp/conf/metadata-providers.xml:/opt/shibboleth-idp/conf/metadata-providers.xml:ro
       - ./config/shibboleth-idp/metadata/oidc-client.json:/opt/shibboleth-idp/metadata/oidc-client.json:ro

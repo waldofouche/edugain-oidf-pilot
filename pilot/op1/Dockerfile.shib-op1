@@ -103,6 +103,7 @@ bin/jwtgen.sh -t EC -c P-256 -u sig -i defaultECSign | tail -n +2 > credentials/
 bin/jwtgen.sh -t RSA -s 2048 -u enc -i defaultRSAEnc | tail -n +2 > credentials/idp-encryption-rsa.jwk
 bin/jwtgen.sh -t EC -c P-384 -u sig -i defaultEC384Sign | tail -n +2 > credentials/idp-signing-es384.jwk
 bin/jwtgen.sh -t EC -c P-521 -u sig -i defaultEC512Sign | tail -n +2 > credentials/idp-signing-es512.jwk
+bin/jwtgen.sh -t EC -c P-521 -u sig -i defaultECFedSign | tail -n +2 > credentials/fed-signing-es512.jwk
 
 tmp_dir="\$(mktemp -d)"
 trap 'rm -rf "\${tmp_dir}"' EXIT

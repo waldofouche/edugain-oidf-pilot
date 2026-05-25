@@ -46,6 +46,9 @@ op1.dev.localhost {
   @oidcDiscovery path /.well-known/openid-configuration
   rewrite @oidcDiscovery /idp/profile/oidc/configuration
 
+  @oidfedDiscovery path /.well-known/openid-federation
+  rewrite @oidfedDiscovery /idp/profile/oidfed/entity-configuration
+
   reverse_proxy https://shibop1:443 {
     transport http {
       tls_insecure_skip_verify
