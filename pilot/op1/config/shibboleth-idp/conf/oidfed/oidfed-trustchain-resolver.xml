@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
+
+       default-init-method="initialize" default-destroy-method="destroy">
+
+    <!--
+        The default function for fetching the map of trusted entities for trust chain resolution via resolve entity API.
+        The map is keyed with entityId of trusted entities whose federation_resolve_endpoint is used as the API endpoint.
+        The entity configuration is used as a trusted source for the endpoint. The map value is a list of trust anchors
+        that will be used for the trust_anchor paramter(s) in the API request.
+
+        The default function may be overridden via 'shibboleth.oidfed.TrustedRemoteResolverEntitiesLookupStrategy' bean
+        that must implement Function<ProfileRequestContext, List<TrustedRemoteResolverEntity>>.
+    -->
+    <bean id="shibboleth.oidfed.DefaultTrustedRemoteResolverEntitiesLookupStrategy" parent="shibboleth.Functions.Constant">
+        <constructor-arg name="target">
+            <util:list value-type="net.shibboleth.idp.plugin.oidc.op.oidfed.profile.TrustedRemoteResolverEntity">
+                <!--
+                    Example entry for a trusted entity 'https://trust-anchor.federation.local'
+                    its 'federation_resolve_endpoint' is exploited with the configured trust_anchor parameters:
+                    '...&trust_anchor=https://trust-anchor.federation.local&trust_anchor=https://another.federation.local'
+                -->
+                <!--
+                <bean class="net.shibboleth.idp.plugin.oidc.op.oidfed.profile.TrustedRemoteResolverEntity"
+                    c:entity="https://trust-anchor.federation.local"
+                    c:anchors="https://trust-anchor.federation.local,https://another.federation.local" />
+                -->
+            </util:list>
+        </constructor-arg>
+    </bean>
+
+</beans>

@@ -2,9 +2,9 @@
   "https://ia1.dev.localhost": {
     "keys": [
       {
-        "alg": "ES512",
-        "crv": "P-521",
-        "kid": "federation_ES512",
+        "alg": "ES256",
+        "crv": "P-256",
+        "kid": "99z0ZXWeOess-qQyzwTrxbylX1wbax-Kh5N8xIhiJGM",
         "kty": "EC",
         "use": "sig",
         "x": "AIXTWf3ThCLEGRmV3-ge4ZeoJhrYwj8MOiHy6T6_kZMtq8aFQ4hSWe9B7p8WaokMWD9duiy6e2sF9OPlQ4zEfRh4",

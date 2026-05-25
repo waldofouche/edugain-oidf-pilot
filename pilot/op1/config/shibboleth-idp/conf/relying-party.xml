@@ -60,6 +60,7 @@
                 <ref bean="OAUTH2.Introspection" />
                 <ref bean="OAUTH2.PAR" />
                 <bean parent="OIDFED.AutomaticRegistration" />
+                <bean parent="OIDFED.ResolveEntity" />
             </list>
         </property>
     </bean>
