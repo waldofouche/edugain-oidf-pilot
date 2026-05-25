@@ -89,6 +89,92 @@ Run health checks from `pilot`:
 ./checks
 ```
 
+### Configure trust locally (IA1, OP1, RP1)
+
+This section documents the minimal steps to wire trust for the local pilot when
+you need to (re)generate keys and register entities under `ia1`.
+
+#### 1) Generate federation keys/JWKS
+
+Use the helper script in `pilot`:
+
+```bash
+cd pilot
+./generate-dev-keys
+```
+
+The script prompts for 2 output directories and writes:
+
+- legacy private key: `<key_dir>/federation_es256.pem`
+- signing keys: `<signing_dir>/federation_*.pem`
+- JWKS: `<signing_dir>/keys.jwks`
+
+Use this when onboarding a new local entity or rotating signing material.
+
+#### 2) Configure OP1 trust toward IA1
+
+Update `pilot/op1/config/shibboleth-idp/conf/oidc.properties`:
+
+- `idp.oidfed.entity.authorityHints = https://ia1.dev.localhost`
+
+Ensure OP1 trusts IA1 signing keys in:
+
+- `pilot/op1/config/shibboleth-idp/conf/oidfed/oidfed-trust-anchors.json`
+
+After changes, restart OP1:
+
+```bash
+cd pilot/op1
+docker compose up -d --force-recreate
+```
+
+#### 3) Configure RP1 trust toward IA1
+
+Update `pilot/rp1/offa/config.yaml`:
+
+- `federation.entity_id: https://rp1.dev.localhost`
+- `federation.trust_anchors: https://ia1.dev.localhost`
+- `federation.authority_hints: https://ia1.dev.localhost`
+
+If RP1 has stale signing state, back it up and regenerate by recreating OFFA:
+
+```bash
+cd pilot/rp1/offa/data
+mv signing "signing.bak.$(date +%Y%m%d%H%M%S)"
+mkdir signing
+
+cd ../../
+docker compose up -d --force-recreate offa
+```
+
+#### 4) Register entities to IA1
+
+Enroll OP1 and RP1 under IA1:
+
+```bash
+curl -k "https://ia1.dev.localhost/enroll?sub=https://op1.dev.localhost"
+curl -k "https://ia1.dev.localhost/enroll?sub=https://rp1.dev.localhost"
+```
+
+IA1 stores active subordinates in:
+
+- `pilot/ia1/lighthouse/data/storage/subordinates.json`
+
+#### 5) Verify trust resolution
+
+Check that IA1 can resolve OP1 and RP1 using IA1 as trust anchor:
+
+```bash
+curl -k "https://ia1.dev.localhost/resolve?sub=https://op1.dev.localhost&trust_anchor=https://ia1.dev.localhost"
+curl -k "https://ia1.dev.localhost/resolve?sub=https://rp1.dev.localhost&trust_anchor=https://ia1.dev.localhost"
+```
+
+If you get `invalid_trust_chain`, verify:
+
+- OP1/RP1 `authority_hints` point to `https://ia1.dev.localhost`
+- OP1/RP1 entity configuration is reachable at `/.well-known/openid-federation`
+- enrolled entries in `subordinates.json` are present and `status` is `0`
+
 ## Pilot Participation
 
 Pilot participation is reserved to current eduGAIN Participants as listed on the eduGAIN Members page, https://technical.edugain.org/status.
