@@ -10,7 +10,7 @@ ENV JETTY_BASE=/opt/jetty-base
 ENV JETTY_LOGS=/opt/jetty-base/logs
 ENV IDP_HOME=/opt/shibboleth-idp
 
-RUN apk add --no-cache bash curl openssl
+RUN apk add --no-cache bash curl openssl ca-certificates
 
 ARG JETTY_BASE_VERSION=12.1
 ARG JETTY_VERSION=12.1.9
@@ -19,6 +19,18 @@ ARG OP1_IDP_HOST=op1.dev.localhost
 COPY shibboleth-idp-docker/jetty-base-${JETTY_BASE_VERSION} ${JETTY_BASE}
 COPY shibboleth-idp-docker/jetty-dist-${JETTY_VERSION}/dist ${JETTY_HOME}
 COPY shibboleth-idp-docker/overlay/jetty-base-${JETTY_BASE_VERSION}/ ${JETTY_BASE}/
+
+# Copy Jetty proxy webapp descriptors
+COPY config/jetty-base-12.1/webapps/ia1.xml ${JETTY_BASE}/webapps/ia1.xml
+
+RUN java -jar "${JETTY_HOME}/start.jar" --list-modules
+
+# Enable Jetty proxy + EE9 servlet support
+RUN java -jar "${JETTY_HOME}/start.jar" \
+    --add-modules=ee10-servlet,ee10-deploy,ee11-proxy,ee10-webapp \
+    --approve-all-licenses \
+    --create-startd \
+    --update-ini
 
 COPY shibboleth-idp-docker/shibboleth-idp ${IDP_HOME}
 COPY shib-op1-entrypoint.sh /usr/local/bin/shib-op1-entrypoint.sh

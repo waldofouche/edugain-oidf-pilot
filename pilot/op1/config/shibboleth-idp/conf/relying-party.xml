@@ -23,9 +23,8 @@
         <property name="profileConfigurations">
             <list>
             <!-- <bean parent="SAML2.SSO" p:encryptAssertions="false" /> -->
-                <ref bean="OIDC.Keyset" />
-                <bean parent="OIDC.Registration" />
                 <ref bean="OIDC.Configuration" />
+                <ref bean="OIDC.Keyset" />
                 <ref bean="OIDFED.Configuration" />
             </list>
         </property>
@@ -53,15 +52,13 @@
                 <!--
                 <ref bean="SAML2.AttributeQuery" />
                 -->
-                <ref bean="SAML2.ArtifactResolution" />
                 <ref bean="OIDC.SSO" />
                 <ref bean="OIDC.UserInfo"/>
                 <ref bean="OAUTH2.Token"/>
                 <ref bean="OAUTH2.Revocation"/>
                 <ref bean="OAUTH2.Introspection" />
-                <ref bean="OAUTH2.PAR" />
                 <bean parent="OIDFED.AutomaticRegistration" />
-                <bean parent="OIDFED.ResolveEntity" />
+<!--                <bean parent="OIDFED.ResolveEntity" />-->
             </list>
         </property>
     </bean>

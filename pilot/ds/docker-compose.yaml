@@ -6,7 +6,10 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - ds.dev.localhost
+          - ds.dev.internal
 
 networks:
   caddy:

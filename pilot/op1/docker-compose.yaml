@@ -24,7 +24,10 @@ services:
       PHPLDAPADMIN_LDAP_HOSTS: op1-ldap
       PHPLDAPADMIN_HTTPS: "false"
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - ldap-ui.dev.localhost
+          - ldap-ui.dev.internal
 
   shibop1:
     image: edugain-pilot/shib-op1:latest
@@ -43,6 +46,12 @@ services:
       - ./config/shibboleth-idp/conf/attributes/pilot-attribute-rules.xml:/opt/shibboleth-idp/conf/attributes/pilot-attribute-rules.xml:ro
       - ./config/shibboleth-idp/conf/attribute-resolver.xml:/opt/shibboleth-idp/conf/attribute-resolver.xml:ro
       - ./config/shibboleth-idp/conf/attribute-filter.xml:/opt/shibboleth-idp/conf/attribute-filter.xml:ro
+      # Mount a custom logback configuration so container logging follows the
+      # repository's log policy and writes to the mounted log directories.
+      - ./config/shibboleth-idp/conf/logback.xml:/opt/shibboleth-idp/conf/logback.xml:ro
+      # Mount Caddy's local root CA so the container can trust locally-generated
+      # TLS certificates used by Caddy's local_certs feature.
+      - ../caddy/data/caddy/pki/authorities/local/root.crt:/usr/local/share/ca-certificates/caddy-local-root.crt:ro
       - ./config/shibboleth-idp/conf/ldap.properties:/opt/shibboleth-idp/conf/ldap.properties:ro
       - ./config/shibboleth-idp/conf/authn/password-authn.properties:/opt/shibboleth-idp/conf/authn/password-authn.properties:ro
       - ./config/shibboleth-idp/conf/oidc-credentials.xml:/opt/shibboleth-idp/conf/oidc-credentials.xml:ro
@@ -66,7 +75,10 @@ services:
       - ./logs/idp:/opt/shibboleth-idp/logs
       - ./logs/jetty:/opt/jetty-base/logs
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - op1.dev.localhost
+          - op1.dev.internal
 
   oidc-test:
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
@@ -89,7 +101,10 @@ services:
     extra_hosts:
       - "${IDP_HOST:-op1.dev.localhost}:host-gateway"
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - oidc-test.dev.localhost
+          - oidc-test.dev.internal
 
 networks:
   caddy:

@@ -14,7 +14,10 @@ services:
       - ./www/index.html:/var/www/html/index.html:ro
       - ./www/cgi-bin/env.cgi:/usr/lib/cgi-bin/env.cgi:ro
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - sp1.dev.localhost
+          - sp1.dev.internal
 
 networks:
   caddy:

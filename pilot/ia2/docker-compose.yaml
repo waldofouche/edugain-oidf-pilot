@@ -14,8 +14,11 @@ services:
       - ../caddy/data/caddy/certificates/local/ia2.dev.localhost/ia2.dev.localhost.key:/certs/ia2.dev.localhost.key:ro
       - ../caddy/data/caddy/pki/authorities/local/root.crt:/usr/local/share/ca-certificates/caddy-local-root.crt:ro
     networks:
-      - caddy
-      
+      caddy:
+        aliases:
+          - ia2.dev.localhost
+          - ia2.dev.internal
+
 networks:
   caddy:
     external: true

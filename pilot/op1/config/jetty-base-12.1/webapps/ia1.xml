@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "https://jetty.org/configure_10_0.dtd">
+
+<Configure class="org.eclipse.jetty.ee9.webapp.WebAppContext">
+
+    <Set name="contextPath">/</Set>
+
+    <Set name="virtualHosts">
+        <Array type="java.lang.String">
+            <Item>ia1.dev.localhost</Item>
+        </Array>
+    </Set>
+
+    <Set name="baseResourceAsString">
+        <Property name="jetty.base"/>
+    </Set>
+
+    <Call name="addServlet">
+        <Arg>
+            <New class="org.eclipse.jetty.ee9.servlet.ServletHolder">
+
+                <Arg>
+                    <Call name="addServletWithMapping">
+  <Arg>org.eclipse.jetty.proxy.ProxyServlet$Transparent</Arg>
+  <Arg>/*</Arg>
+</Call>
+                </Arg>
+
+                <Call name="setInitParameter">
+                    <Arg>proxyTo</Arg>
+                    <Arg>http://goia1:8765</Arg>
+                </Call>
+
+                <Call name="setInitParameter">
+                    <Arg>prefix</Arg>
+                    <Arg>/</Arg>
+                </Call>
+
+            </New>
+        </Arg>
+
+        <Arg>/*</Arg>
+    </Call>
+
+</Configure>

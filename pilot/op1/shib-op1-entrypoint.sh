@@ -75,5 +75,14 @@ if [[ ! -s "${keystore}" || "$(cat "${host_marker}" 2>/dev/null || true)" != "${
   printf '%s\n' "${IDP_HOST}" > "${host_marker}"
 fi
 
+# If Caddy's local root certificate has been mounted into the standard
+# Alpine location, update the container trust store so the IdP JVM and
+# system tools trust it. This is a no-op if the file is not present.
+if [[ -f "/usr/local/share/ca-certificates/caddy-local-root.crt" ]]; then
+  echo "Detected Caddy root certificate; updating container CA store"
+  # update-ca-certificates is provided by the ca-certificates package
+  update-ca-certificates || echo "update-ca-certificates failed" >&2
+fi
+
 exec "$@"
 

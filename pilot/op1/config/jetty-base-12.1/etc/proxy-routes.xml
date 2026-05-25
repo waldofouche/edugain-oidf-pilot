@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "https://www.eclipse.org/jetty/configure_10_0.dtd">
+
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+
+    <Ref id="Contexts">
+
+        <!-- ====================================================== -->
+        <!-- rp1.dev.localhost -> offa:15661                        -->
+        <!-- ====================================================== -->
+
+        <Call name="addHandler">
+            <Arg>
+                <New class="org.eclipse.jetty.ee10.servlet.ServletContextHandler">
+
+                    <Set name="contextPath">/</Set>
+
+                    <Set name="virtualHosts">
+                        <Array type="java.lang.String">
+                            <Item>rp1.dev.localhost</Item>
+                        </Array>
+                    </Set>
+
+                    <Call name="addServlet">
+
+                        <Arg>
+                            <New class="org.eclipse.jetty.ee10.servlet.ServletHolder">
+
+                                <Arg>
+                                    <New class="org.eclipse.jetty.proxy.ProxyServlet$Transparent"/>
+                                </Arg>
+
+                                <Set name="name">rp1-proxy</Set>
+                                <Set name="asyncSupported">true</Set>
+
+                                <Call name="setInitParameter">
+                                    <Arg>proxyTo</Arg>
+                                    <Arg>http://offa:15661</Arg>
+                                </Call>
+
+                                <Call name="setInitParameter">
+                                    <Arg>prefix</Arg>
+                                    <Arg>/</Arg>
+                                </Call>
+
+                                <Call name="setInitParameter">
+                                    <Arg>preserveHost</Arg>
+                                    <Arg>true</Arg>
+                                </Call>
+
+                            </New>
+                        </Arg>
+
+                        <Arg>/*</Arg>
+
+                    </Call>
+
+                </New>
+            </Arg>
+        </Call>
+
+        <!-- ====================================================== -->
+        <!-- ia1.dev.localhost -> goia1:8765                        -->
+        <!-- ====================================================== -->
+
+        <Call name="addHandler">
+            <Arg>
+                <New class="org.eclipse.jetty.ee10.servlet.ServletContextHandler">
+
+                    <Set name="contextPath">/</Set>
+
+                    <Set name="virtualHosts">
+                        <Array type="java.lang.String">
+                            <Item>ia1.dev.localhost</Item>
+                        </Array>
+                    </Set>
+
+                    <Call name="addServlet">
+
+                        <Arg>
+                            <New class="org.eclipse.jetty.ee10.servlet.ServletHolder">
+
+                                <Arg>
+                                    <New class="org.eclipse.jetty.proxy.ProxyServlet$Transparent"/>
+                                </Arg>
+
+                                <Set name="name">ia1-proxy</Set>
+                                <Set name="asyncSupported">true</Set>
+
+                                <Call name="setInitParameter">
+                                    <Arg>proxyTo</Arg>
+                                    <Arg>http://goia1:8765</Arg>
+                                </Call>
+
+                                <Call name="setInitParameter">
+                                    <Arg>prefix</Arg>
+                                    <Arg>/</Arg>
+                                </Call>
+
+                                <Call name="setInitParameter">
+                                    <Arg>preserveHost</Arg>
+                                    <Arg>true</Arg>
+                                </Call>
+
+                            </New>
+                        </Arg>
+
+                        <Arg>/*</Arg>
+
+                    </Call>
+
+                </New>
+            </Arg>
+        </Call>
+
+    </Ref>
+
+</Configure>

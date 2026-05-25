@@ -8,7 +8,10 @@ services:
     volumes:
       - ./metadata:/metadata:ro
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - mdq.dev.localhost
+          - mdq.dev.internal
 
 networks:
   caddy:

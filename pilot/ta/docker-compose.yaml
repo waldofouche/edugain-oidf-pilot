@@ -14,7 +14,10 @@ services:
       - ../caddy/data/caddy/certificates/local/ta.dev.localhost/ta.dev.localhost.key:/certs/ta.dev.localhost.key:ro
       - ../caddy/data/caddy/pki/authorities/local/root.crt:/usr/local/share/ca-certificates/caddy-local-root.crt:ro
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - ta.dev.localhost
+          - ta.dev.internal
 
 networks:
   caddy:

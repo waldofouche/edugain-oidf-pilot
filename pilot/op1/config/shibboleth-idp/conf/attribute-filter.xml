@@ -7,6 +7,63 @@
     <AttributeFilterPolicy id="alwaysRelease">
         <PolicyRequirementRule xsi:type="ANY" />
 
+        <!-- Release the commonly-used attributes to any requester. This mirrors
+             the attribute lists used for local OIDC/RP and SAML SP policies so
+             the IdP will expose these attributes when the policy 'alwaysRelease'
+             applies. If you need truly every possible attribute emitted, add
+             additional AttributeRule entries here or replace with a more
+             permissive matcher supported by your IdP version. -->
+        <AttributeRule attributeID="auEduPersonLegalName" permitAny="true" />
+        <AttributeRule attributeID="auEduPersonSharedToken" permitAny="true" />
+        <AttributeRule attributeID="authenticationMethod" permitAny="true" />
+        <AttributeRule attributeID="businessCategory" permitAny="true" />
+        <AttributeRule attributeID="carLicense" permitAny="true" />
+        <AttributeRule attributeID="cn" permitAny="true" />
+        <AttributeRule attributeID="departmentNumber" permitAny="true" />
+        <AttributeRule attributeID="description" permitAny="true" />
+        <AttributeRule attributeID="displayName" permitAny="true" />
+        <AttributeRule attributeID="division" permitAny="true" />
+        <AttributeRule attributeID="dsdStudentID" permitAny="true" />
+        <AttributeRule attributeID="eduPersonAffiliation" permitAny="true" />
+        <AttributeRule attributeID="eduPersonAssurance" permitAny="true" />
+        <AttributeRule attributeID="eduPersonEntitlement" permitAny="true" />
+        <AttributeRule attributeID="eduPersonOrcid" permitAny="true" />
+        <AttributeRule attributeID="eduPersonPrimaryAffiliation" permitAny="true" />
+        <AttributeRule attributeID="eduPersonPrincipalName" permitAny="true" />
+        <AttributeRule attributeID="eduPersonScopedAffiliation" permitAny="true" />
+        <AttributeRule attributeID="eduPersonTargetedID" permitAny="true" />
+        <AttributeRule attributeID="employeeNumber" permitAny="true" />
+        <AttributeRule attributeID="employeeType" permitAny="true" />
+        <AttributeRule attributeID="facsimileTelephoneNumber" permitAny="true" />
+        <AttributeRule attributeID="givenName" permitAny="true" />
+        <AttributeRule attributeID="homeOrganization" permitAny="true" />
+        <AttributeRule attributeID="homeOrganizationType" permitAny="true" />
+        <AttributeRule attributeID="identityProviderEntityId" permitAny="true" />
+        <AttributeRule attributeID="initials" permitAny="true" />
+        <AttributeRule attributeID="l" permitAny="true" />
+        <AttributeRule attributeID="mail" permitAny="true" />
+        <AttributeRule attributeID="manager" permitAny="true" />
+        <AttributeRule attributeID="mobileNumber" permitAny="true" />
+        <AttributeRule attributeID="o" permitAny="true" />
+        <AttributeRule attributeID="organizationalUnit" permitAny="true" />
+        <AttributeRule attributeID="persistentNameID" permitAny="true" />
+        <AttributeRule attributeID="physicalDeliveryOfficeName" permitAny="true" />
+        <AttributeRule attributeID="postOfficeBox" permitAny="true" />
+        <AttributeRule attributeID="postalAddress" permitAny="true" />
+        <AttributeRule attributeID="postalCode" permitAny="true" />
+        <AttributeRule attributeID="preferredLanguage" permitAny="true" />
+        <AttributeRule attributeID="samlPairwiseID" permitAny="true" />
+        <AttributeRule attributeID="samlSubjectID" permitAny="true" />
+        <AttributeRule attributeID="schacPersonalUniqueID" permitAny="true" />
+        <AttributeRule attributeID="seeAlso" permitAny="true" />
+        <AttributeRule attributeID="st" permitAny="true" />
+        <AttributeRule attributeID="street" permitAny="true" />
+        <AttributeRule attributeID="subject" permitAny="true" />
+        <AttributeRule attributeID="surname" permitAny="true" />
+        <AttributeRule attributeID="telephoneNumber" permitAny="true" />
+        <AttributeRule attributeID="title" permitAny="true" />
+        <AttributeRule attributeID="uid" permitAny="true" />
+        <AttributeRule attributeID="voPersonAffiliation" permitAny="true" />
         <AttributeRule attributeID="schacHomeOrganization" permitAny="true" />
     </AttributeFilterPolicy>
 

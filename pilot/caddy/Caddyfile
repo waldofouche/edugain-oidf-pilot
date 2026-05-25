@@ -5,13 +5,7 @@
 import caddy-secrets/default.caddy
 
 ta.dev.localhost, ta.dev.internal {
-  handle_path /static/* {
-    root * /static/ta.dev.localhost
-    file_server
-  }
-  handle {
     reverse_proxy gota:8765
-  }
 }
 
 ia1.dev.localhost, ia1.dev.internal {

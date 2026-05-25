@@ -7,14 +7,20 @@ services:
       - ./offa/data:/data
       - ../caddy/data/caddy/pki/authorities/local/root.crt:/usr/local/share/ca-certificates/caddy-local-root.crt:ro
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - rp1.dev.localhost
+          - rp1.dev.internal
 
   # This would be your service
   whoami:
     image: containous/whoami
     restart: unless-stopped
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - whoami.dev.localhost
+          - whoami.dev.internal
 
 networks:
   caddy:

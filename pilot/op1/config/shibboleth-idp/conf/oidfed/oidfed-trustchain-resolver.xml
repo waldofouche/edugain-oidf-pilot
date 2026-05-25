@@ -26,11 +26,11 @@
                     its 'federation_resolve_endpoint' is exploited with the configured trust_anchor parameters:
                     '...&trust_anchor=https://trust-anchor.federation.local&trust_anchor=https://another.federation.local'
                 -->
-                <!--
+
                 <bean class="net.shibboleth.idp.plugin.oidc.op.oidfed.profile.TrustedRemoteResolverEntity"
-                    c:entity="https://trust-anchor.federation.local"
-                    c:anchors="https://trust-anchor.federation.local,https://another.federation.local" />
-                -->
+                    c:entity="https://ia1.dev.localhost"
+                    c:anchors="https://ia1.dev.localhost" />
+
             </util:list>
         </constructor-arg>
     </bean>

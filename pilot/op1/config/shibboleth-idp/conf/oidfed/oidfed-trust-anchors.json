@@ -2,11 +2,10 @@
   "https://ia1.dev.localhost": {
     "keys": [
       {
-        "alg": "ES256",
-        "crv": "P-256",
-        "kid": "99z0ZXWeOess-qQyzwTrxbylX1wbax-Kh5N8xIhiJGM",
         "kty": "EC",
         "use": "sig",
+        "kid": "defaultECFedSign",
+        "crv": "P-256",
         "x": "13YmKB8e4-c37Tpk6yixs-PmGpydDM5eKoC33MRbdf0",
         "y": "X6ZakneC9802ditkXh1tuc-NpnDnYvH05kiOuvdRi38"
       }
