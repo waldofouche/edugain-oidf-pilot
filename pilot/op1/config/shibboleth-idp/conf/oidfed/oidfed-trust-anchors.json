@@ -1,1 +1,15 @@
-{}
+{
+  "https://ta.oidf-pilot.edugain.org": {
+    "keys": [
+      {
+        "alg": "ES512",
+        "crv": "P-521",
+        "kid": "federation_ES512",
+        "kty": "EC",
+        "use": "sig",
+        "x": "AIXTWf3ThCLEGRmV3-ge4ZeoJhrYwj8MOiHy6T6_kZMtq8aFQ4hSWe9B7p8WaokMWD9duiy6e2sF9OPlQ4zEfRh4",
+        "y": "AEAXa3OmKTQ3CvXhsR4h742vdhsCf1-ISSASqLCuKnsGWqwut2SxapBcDF_qmj-DFaSNLAnn8Xdo_GY6x8T86d-C"
+      }
+    ]
+  }
+}
