@@ -5,6 +5,7 @@ services:
     volumes:
       - ./offa/config.yaml:/config.yaml:ro
       - ./offa/data:/data
+      - ../caddy/data/caddy/pki/authorities/local/root.crt:/usr/local/share/ca-certificates/caddy-local-root.crt:ro
     networks:
       - caddy
 
