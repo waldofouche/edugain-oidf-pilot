@@ -1,5 +1,10 @@
 server:
   port: 8765
+  tls:
+    enabled: true
+    redirect_http: true
+    cert: /certs/ia2.dev.localhost.crt
+    key: /certs/ia2.dev.localhost.key
 signing:
   alg: ES512
   key_dir: "/data/signing/"

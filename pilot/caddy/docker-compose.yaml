@@ -12,7 +12,34 @@ services:
       - ./config:/config
       - ./static:/static
     networks:
-      - caddy
+      caddy:
+        aliases:
+          - ta.dev.localhost
+          - ta.dev.internal
+          - ia1.dev.localhost
+          - ia1.dev.internal
+          - ia2.dev.localhost
+          - ia2.dev.internal
+          - rp1.dev.localhost
+          - rp1.dev.internal
+          - oidc-test.dev.localhost
+          - oidc-test.dev.internal
+          - mdq.dev.localhost
+          - mdq.dev.internal
+          - ds.dev.localhost
+          - ds.dev.internal
+          - sp1.dev.localhost
+          - sp1.dev.internal
+          - op1.dev.localhost
+          - op1.dev.internal
+          - ldap-ui.dev.localhost
+          - ldap-ui.dev.internal
+          - op2.dev.localhost
+          - op2.dev.internal
+          - whoami.dev.localhost
+          - whoami.dev.internal
+          - rp2.dev.localhost
+          - rp2.dev.internal
 
 networks:
   caddy:

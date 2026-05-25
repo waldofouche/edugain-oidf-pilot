@@ -4,7 +4,7 @@
 
 import caddy-secrets/default.caddy
 
-ta.dev.localhost {
+ta.dev.localhost, ta.dev.internal {
   handle_path /static/* {
     root * /static/ta.dev.localhost
     file_server
@@ -14,35 +14,35 @@ ta.dev.localhost {
   }
 }
 
-ia1.dev.localhost {
+ia1.dev.localhost, ia1.dev.internal {
   reverse_proxy goia1:8765
 }
 
-ia2.dev.localhost {
+ia2.dev.localhost, ia2.dev.internal {
   reverse_proxy goia2:8765
 }
 
-rp1.dev.localhost {
+rp1.dev.localhost, rp1.dev.internal {
   reverse_proxy offa:15661
 }
 
-oidc-test.dev.localhost {
+oidc-test.dev.localhost, oidc-test.dev.internal {
   reverse_proxy oidc-test:4180
 }
 
-mdq.dev.localhost {
+mdq.dev.localhost, mdq.dev.internal {
   reverse_proxy mdq:8080
 }
 
-ds.dev.localhost {
+ds.dev.localhost, ds.dev.internal {
   reverse_proxy ds:8080
 }
 
-sp1.dev.localhost {
+sp1.dev.localhost, sp1.dev.internal {
   reverse_proxy sp1:80
 }
 
-op1.dev.localhost {
+op1.dev.localhost, op1.dev.internal {
   @oidcDiscovery path /.well-known/openid-configuration
   rewrite @oidcDiscovery /idp/profile/oidc/configuration
 
@@ -56,15 +56,15 @@ op1.dev.localhost {
   }
 }
 
-ldap-ui.dev.localhost {
+ldap-ui.dev.localhost, ldap-ui.dev.internal {
   reverse_proxy ldap-ui:80
 }
 
-op2.dev.localhost {
+op2.dev.localhost, op2.dev.internal {
   reverse_proxy mockia1:80
 }
 
-whoami.dev.localhost {
+whoami.dev.localhost, whoami.dev.internal {
    forward_auth offa:15661 {
       uri /auth
       copy_headers X-Forwarded-User X-Forwarded-Groups X-Forwarded-Name X-Forwarded-Email X-Forwarded-Provider X-Forwarded-Subject
@@ -73,6 +73,6 @@ whoami.dev.localhost {
    reverse_proxy whoami:80
 }
 
-rp2.dev.localhost {
+rp2.dev.localhost, rp2.dev.internal {
    reverse_proxy rp2:80
 }
